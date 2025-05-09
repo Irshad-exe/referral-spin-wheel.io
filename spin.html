@@ -170,8 +170,10 @@
       spinButton.disabled = false;
       spinButton.onclick = () => {
         if (alreadyUsed) return;
+        console.log('Spin started');
         spinButton.disabled = true;
         const winnerIndex = pickWeightedIndex(PRIZES);
+        console.log('Winner index selected:', winnerIndex);
         wheel.animation.stopAngle = wheel.getRandomForSegment(winnerIndex + 1);
         wheel.startAnimation();
       };
@@ -188,10 +190,13 @@
     }
 
     async function handleSpinComplete(indicatedSegment) {
+      console.log('Spin completed');
       const prize = indicatedSegment.text;
       const countWon = parseInt(prize) || 0;
+      console.log('Prize won:', prize, 'Count:', countWon);
       try {
         // First, verify the token exists and is not used
+        console.log('Verifying token:', currentToken);
         const { data: spinLink, error: verifyError } = await supabase
           .from('spin_links')
           .select('*')
@@ -200,10 +205,13 @@
           .single();
 
         if (verifyError || !spinLink) {
+          console.error('Token verification failed:', verifyError?.message);
           throw new Error('Invalid or already used token');
         }
+        console.log('Token verified successfully');
 
         // Mark used & record prize
+        console.log('Updating spin link:', spinLink.id);
         const { error: updateLinkError, data: updateData } = await supabase
           .from('spin_links')
           .update({ used: true, prize, used_at: new Date().toISOString() })
@@ -211,10 +219,13 @@
           .select('id');
 
         if (updateLinkError || !updateData) {
+          console.error('Spin link update failed:', updateLinkError?.message);
           throw new Error('Failed to update spin link: ' + (updateLinkError?.message || 'Unknown error'));
         }
+        console.log('Spin link updated successfully');
 
         // Update client ladoo_count
+        console.log('Fetching client ID for referral:', spinLink.referral_id);
         const { data: ref, error: refError } = await supabase
           .from('referrals')
           .select('client_id')
@@ -222,8 +233,10 @@
           .single();
 
         if (refError || !ref) {
+          console.error('Failed to fetch client ID:', refError?.message);
           throw new Error('Failed to fetch client_id: ' + (refError?.message || 'Unknown error'));
         }
+        console.log('Client ID fetched successfully:', ref.client_id);
 
         const { data: cli, error: cliError } = await supabase
           .from('clients')
@@ -232,10 +245,13 @@
           .single();
 
         if (cliError || !cli) {
+          console.error('Failed to fetch client data:', cliError?.message);
           throw new Error('Failed to fetch client data: ' + (cliError?.message || 'Unknown error'));
         }
+        console.log('Current client ladoo count:', cli.ladoo_count);
 
         const newCount = (cli.ladoo_count || 0) + countWon;
+        console.log('Updating client ladoo count to:', newCount);
         const { error: updateError } = await supabase
           .from('clients')
           .update({ ladoo_count: newCount })
@@ -243,8 +259,10 @@
           .single();
 
         if (updateError) {
+          console.error('Failed to update client data:', updateError?.message);
           throw new Error('Failed to update client data: ' + (updateError?.message || 'Unknown error'));
         }
+        console.log('Client data updated successfully');
 
         alreadyUsed = true;
         showResult(prize);
