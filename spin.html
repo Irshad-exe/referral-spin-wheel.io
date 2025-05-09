@@ -1,199 +1,221 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spin to Win!</title>
-    <!-- Include Winwheel & GSAP -->
-    <script src="https://cdn.jsdelivr.net/npm/winwheel@1.0.1/dist/Winwheel.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
-    <!-- Load config as ESM module -->
-    <script type="module" src="/js/config.js"></script>
-    <link rel="stylesheet" href="/referral-spin-wheel.io/css/styles.css">
-    <style>
-        /* ... your existing styles ... */
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spin to Win!</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/winwheel@1.0.1/dist/Winwheel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <link rel="stylesheet" href="/referral-spin-wheel.io/css/styles.css">
+  <style>
+    existing style#wheel-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 40px 0 20px 0;
+            position: relative;
+        }
+        #wheel {
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+            border: 8px solid #4CAF50;
+            display: block;
+        }
+        .pointer {
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-bottom: 40px solid #e74c3c;
+            position: absolute;
+            top: -38px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+        }
+        #spin-button {
+            margin-top: 20px;
+            padding: 15px 40px;
+            font-size: 20px;
+            border-radius: 8px;
+            background: #4CAF50;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        #spin-button:disabled {
+            background: #bdbdbd;
+            cursor: not-allowed;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10;
+            left: 0; top: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.4);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: #fff;
+            padding: 40px 30px;
+            border-radius: 10px;
+            text-align: center;
+            min-width: 300px;
+        }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Spin to Win Ladoos!</h1>
-        <div id="wheel-container">
-            <div class="pointer"></div>
-            <canvas id="wheel" width="400" height="400"></canvas>
-        </div>
-        <button id="spin-button" disabled>Spin!</button>
-        <div id="result-modal" class="modal">
-            <div class="modal-content">
-                <h2 id="result-title">Congratulations!</h2>
-                <p id="result-text"></p>
-                <button id="close-modal">Close</button>
-            </div>
-        </div>
+  <div class="container">
+    <h1>Spin to Win Ladoos!</h1>
+    <div id="wheel-container">
+      <div class="pointer"></div>
+      <canvas id="wheel" width="400" height="400"></canvas>
     </div>
+    <button id="spin-button" disabled>Spin!</button>
+    <div id="result-modal" class="modal">
+      <div class="modal-content">
+        <h2 id="result-title">Congratulations!</h2>
+        <p id="result-text"></p>
+        <button id="close-modal">Close</button>
+      </div>
+    </div>
+  </div>
 
-    <script type="module">
-        import { supabase, PRIZES } from './js/config.js';
+  <script>
+    // Supabase config and initialization
+    const SUPABASE_URL = 'https://nnqxwcmncytolztvvpvi.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ucXh3Y21uY3l0b2x6dHZ2cHZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4MDg0MjMsImV4cCI6MjA2MjM4NDQyM30.2Ad2Wv3YC9DwxOG82JBF21BGvkS6gbIFOpPXLCWkdso';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let wheel;
-        let spinButton;
-        let resultModal;
-        let resultText;
-        let resultTitle;
-        let closeModalButton;
-        let currentToken;
-        let alreadyUsed = false;
+    // Prize configuration with weights
+    const PRIZES = [
+      { text: '1 Ladoo',   weight: 40 },
+      { text: '2 Ladoos',  weight: 20 },
+      { text: 'Try Again', weight: 30 },
+      { text: '3 Ladoos',  weight: 10 }
+    ];
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            spinButton = document.getElementById('spin-button');
-            resultModal = document.getElementById('result-modal');
-            resultText = document.getElementById('result-text');
-            resultTitle = document.getElementById('result-title');
-            closeModalButton = document.getElementById('close-modal');
+    let wheel;
+    let spinButton;
+    let resultModal;
+    let resultText;
+    let resultTitle;
+    let closeModalButton;
+    let currentToken;
+    let alreadyUsed = false;
 
-            // Get token from URL
-            const urlParams = new URLSearchParams(window.location.search);
-            currentToken = urlParams.get('token');
+    document.addEventListener('DOMContentLoaded', async () => {
+      spinButton = document.getElementById('spin-button');
+      resultModal = document.getElementById('result-modal');
+      resultText = document.getElementById('result-text');
+      resultTitle = document.getElementById('result-title');
+      closeModalButton = document.getElementById('close-modal');
 
-            if (!currentToken) {
-                showError('No token provided');
-                return;
-            }
+      // Get token from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      currentToken = urlParams.get('token');
+      if (!currentToken) return showError('No token provided');
 
-            // Validate token
-            const { data: spinLink, error } = await supabase
-                .from('spin_links')
-                .select('*')
-                .eq('token', currentToken)
-                .single();
+      // Validate token
+      const { data: spinLink, error } = await supabase
+        .from('spin_links')
+        .select('used')
+        .eq('token', currentToken)
+        .single();
+      if (error || !spinLink) return showError('Invalid token');
+      if (spinLink.used) return showError('This spin link has already been used.');
 
-            if (error || !spinLink) {
-                showError('Invalid token');
-                return;
-            }
+      // Initialize wheel now that token is valid and unused
+      initializeWheel();
+    });
 
-            if (spinLink.used) {
-                alreadyUsed = true;
-                showError('This spin link has already been used.');
-                return;
-            }
-
-            // Initialize wheel now that token is valid and unused
-            initializeWheel();
-        });
-
-        function initializeWheel() {
-            // Create Winwheel segments from PRIZES
-            const segments = PRIZES.map(prize => ({
-                fillStyle: getRandomColor(),
-                text: prize.text
-            }));
-
-            wheel = new Winwheel({
-                canvasId: 'wheel',
-                numSegments: segments.length,
-                segments,
-                animation: {
-                    type: 'spinToStop',
-                    duration: 5,
-                    spins: 8,
-                    callbackFinished: handleSpinComplete
-                }
-            });
-
-            spinButton.disabled = false;
-            spinButton.addEventListener('click', () => {
-                if (alreadyUsed) return;
-                // Pick weighted winner index
-                const winnerIndex = pickWeightedIndex(PRIZES);
-                // Calculate stop angle for that segment
-                wheel.animation.stopAngle = wheel.getRandomForSegment(winnerIndex + 1);
-                wheel.startAnimation();
-                spinButton.disabled = true;
-            });
+    function initializeWheel() {
+      const segments = PRIZES.map(p => ({ fillStyle: getRandomColor(), text: p.text }));
+      wheel = new Winwheel({
+        canvasId: 'wheel',
+        numSegments: segments.length,
+        segments,
+        animation: {
+          type: 'spinToStop', duration: 5, spins: 8, callbackFinished: handleSpinComplete
         }
+      });
+      spinButton.disabled = false;
+      spinButton.onclick = () => {
+        if (alreadyUsed) return;
+        spinButton.disabled = true;
+        const winnerIndex = pickWeightedIndex(PRIZES);
+        wheel.animation.stopAngle = wheel.getRandomForSegment(winnerIndex + 1);
+        wheel.startAnimation();
+      };
+    }
 
-        function pickWeightedIndex(prizes) {
-            const total = prizes.reduce((sum, p) => sum + p.weight, 0);
-            let r = Math.random() * total;
-            for (let i = 0; i < prizes.length; i++) {
-                if (r < prizes[i].weight) return i;
-                r -= prizes[i].weight;
-            }
-            return 0;
-        }
+    function pickWeightedIndex(prizes) {
+      let total = prizes.reduce((s, p) => s + p.weight, 0);
+      let rand = Math.random() * total;
+      for (let i = 0; i < prizes.length; i++) {
+        if (rand < prizes[i].weight) return i;
+        rand -= prizes[i].weight;
+      }
+      return 0;
+    }
 
-        async function handleSpinComplete(indicatedSegment) {
-            const prize = indicatedSegment.text;
-            const countWon = parseInt(prize) || 0;
+    async function handleSpinComplete(indicatedSegment) {
+      const prize = indicatedSegment.text;
+      const countWon = parseInt(prize) || 0;
+      try {
+        // Mark used & record prize
+        const { error: uErr } = await supabase
+          .from('spin_links')
+          .update({ used: true, prize, used_at: new Date().toISOString() })
+          .eq('token', currentToken);
+        if (uErr) throw uErr;
 
-            try {
-                // Mark spin link used and record prize
-                const { error: spinError } = await supabase
-                    .from('spin_links')
-                    .update({ used: true, prize, used_at: new Date().toISOString() })
-                    .eq('token', currentToken);
-                if (spinError) throw spinError;
+        // Fetch referral_id
+        const { data: row } = await supabase
+          .from('spin_links')
+          .select('referral_id')
+          .eq('token', currentToken)
+          .single();
+        // Update client ladoo_count
+        const { data: ref } = await supabase
+          .from('referrals')
+          .select('client_id')
+          .eq('id', row.referral_id)
+          .single();
+        const { data: cli } = await supabase
+          .from('clients')
+          .select('ladoo_count')
+          .eq('id', ref.client_id)
+          .single();
+        const newCount = (cli.ladoo_count||0) + countWon;
+        await supabase.from('clients').update({ ladoo_count:newCount }).eq('id',ref.client_id);
 
-                // Fetch referral to get client_id
-                const { data: linkRow, error: linkError } = await supabase
-                    .from('spin_links')
-                    .select('referral_id')
-                    .eq('token', currentToken)
-                    .single();
-                if (linkError) throw linkError;
+        alreadyUsed = true;
+        showResult(prize);
+        setTimeout(() => window.location.reload(), 1200);
+      } catch (e) {
+        console.error(e);
+        showError('Something went wrong.');
+      }
+    }
 
-                const { data: referral, error: refError } = await supabase
-                    .from('referrals')
-                    .select('client_id')
-                    .eq('id', linkRow.referral_id)
-                    .single();
-                if (refError) throw refError;
-
-                // Update ladoo_count for client
-                const { data: clientData, error: clientFetchError } = await supabase
-                    .from('clients')
-                    .select('ladoo_count')
-                    .eq('id', referral.client_id)
-                    .single();
-                if (clientFetchError) throw clientFetchError;
-
-                const newCount = (clientData.ladoo_count || 0) + countWon;
-                const { error: clientUpdateError } = await supabase
-                    .from('clients')
-                    .update({ ladoo_count: newCount })
-                    .eq('id', referral.client_id);
-                if (clientUpdateError) throw clientUpdateError;
-
-                alreadyUsed = true;
-                showResult(prize);
-                // Reload to enforce used flag check
-                setTimeout(() => window.location.reload(), 1200);
-            } catch (err) {
-                console.error('DB error:', err);
-                showError('Something went wrong.');
-            }
-        }
-
-        function showResult(prize) {
-            resultTitle.textContent = 'Congratulations!';
-            resultText.textContent = `You won: ${prize}!`;
-            resultModal.style.display = 'flex';
-        }
-
-        function showError(message) {
-            resultTitle.textContent = 'Sorry!';
-            resultText.textContent = message;
-            resultModal.style.display = 'flex';
-        }
-
-        closeModalButton.addEventListener('click', () => {
-            resultModal.style.display = 'none';
-        });
-
-        function getRandomColor() {
-            const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD'];
-            return colors[Math.floor(Math.random() * colors.length)];
-        }
-    </script>
+    function showResult(prize) {
+      resultTitle.textContent = 'Congratulations!';
+      resultText.textContent = `You won: ${prize}!`;
+      resultModal.style.display = 'flex';
+    }
+    function showError(msg) {
+      resultTitle.textContent = 'Sorry!';
+      resultText.textContent = msg;
+      resultModal.style.display = 'flex';
+    }
+    closeModalButton.addEventListener('click', ()=> resultModal.style.display='none');
+    function getRandomColor(){ const c=['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFEEAD'];return c[Math.floor(Math.random()*c.length)];}
+  </script>
 </body>
 </html>
