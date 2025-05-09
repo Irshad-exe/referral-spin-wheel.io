@@ -4,69 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spin to Win!</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Include Winwheel & GSAP -->
     <script src="https://cdn.jsdelivr.net/npm/winwheel@1.0.1/dist/Winwheel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <!-- Load config as ESM module -->
+    <script type="module" src="/js/config.js"></script>
     <link rel="stylesheet" href="/referral-spin-wheel.io/css/styles.css">
     <style>
-        #wheel-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            margin: 40px 0 20px 0;
-            position: relative;
-        }
-        #wheel {
-            background: #fff;
-            border-radius: 50%;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.15);
-            border: 8px solid #4CAF50;
-            display: block;
-        }
-        .pointer {
-            width: 0;
-            height: 0;
-            border-left: 25px solid transparent;
-            border-right: 25px solid transparent;
-            border-bottom: 40px solid #e74c3c;
-            position: absolute;
-            top: -38px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 2;
-        }
-        #spin-button {
-            margin-top: 20px;
-            padding: 15px 40px;
-            font-size: 20px;
-            border-radius: 8px;
-            background: #4CAF50;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        #spin-button:disabled {
-            background: #bdbdbd;
-            cursor: not-allowed;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 10;
-            left: 0; top: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.4);
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-content {
-            background: #fff;
-            padding: 40px 30px;
-            border-radius: 10px;
-            text-align: center;
-            min-width: 300px;
-        }
+        /* ... your existing styles ... */
     </style>
 </head>
 <body>
@@ -86,8 +31,9 @@
         </div>
     </div>
 
-    <script src="/referral-spin-wheel.io/js/config.js"></script>
-    <script>
+    <script type="module">
+        import { supabase, PRIZES } from './js/config.js';
+
         let wheel;
         let spinButton;
         let resultModal;
@@ -128,87 +74,103 @@
             if (spinLink.used) {
                 alreadyUsed = true;
                 showError('This spin link has already been used.');
-                spinButton.disabled = true;
                 return;
             }
 
-            // Initialize wheel
-            if (typeof Winwheel === 'undefined') {
-                alert('Winwheel library failed to load!');
-                return;
-            }
+            // Initialize wheel now that token is valid and unused
             initializeWheel();
-            spinButton.disabled = false;
         });
 
         function initializeWheel() {
+            // Create Winwheel segments from PRIZES
+            const segments = PRIZES.map(prize => ({
+                fillStyle: getRandomColor(),
+                text: prize.text
+            }));
+
             wheel = new Winwheel({
-                'canvasId': 'wheel',
-                'numSegments': PRIZES.length,
-                'segments': PRIZES.map(prize => ({
-                    'fillStyle': getRandomColor(),
-                    'text': prize.text
-                })),
-                'animation': {
-                    'type': 'spinToStop',
-                    'duration': 5,
-                    'spins': 8,
-                    'callbackFinished': handleSpinComplete
+                canvasId: 'wheel',
+                numSegments: segments.length,
+                segments,
+                animation: {
+                    type: 'spinToStop',
+                    duration: 5,
+                    spins: 8,
+                    callbackFinished: handleSpinComplete
                 }
             });
 
             spinButton.disabled = false;
             spinButton.addEventListener('click', () => {
                 if (alreadyUsed) return;
-                spinButton.disabled = true;
+                // Pick weighted winner index
+                const winnerIndex = pickWeightedIndex(PRIZES);
+                // Calculate stop angle for that segment
+                wheel.animation.stopAngle = wheel.getRandomForSegment(winnerIndex + 1);
                 wheel.startAnimation();
+                spinButton.disabled = true;
             });
+        }
+
+        function pickWeightedIndex(prizes) {
+            const total = prizes.reduce((sum, p) => sum + p.weight, 0);
+            let r = Math.random() * total;
+            for (let i = 0; i < prizes.length; i++) {
+                if (r < prizes[i].weight) return i;
+                r -= prizes[i].weight;
+            }
+            return 0;
         }
 
         async function handleSpinComplete(indicatedSegment) {
             const prize = indicatedSegment.text;
-            const ladooCount = parseInt(prize) || 0;
+            const countWon = parseInt(prize) || 0;
 
             try {
-                // Update spin link
+                // Mark spin link used and record prize
                 const { error: spinError } = await supabase
                     .from('spin_links')
-                    .update({
-                        used: true,
-                        prize: prize,
-                        used_at: new Date().toISOString()
-                    })
+                    .update({ used: true, prize, used_at: new Date().toISOString() })
                     .eq('token', currentToken);
-
                 if (spinError) throw spinError;
 
-                // Get referral details
-                const { data: spinLink } = await supabase
+                // Fetch referral to get client_id
+                const { data: linkRow, error: linkError } = await supabase
                     .from('spin_links')
                     .select('referral_id')
                     .eq('token', currentToken)
                     .single();
+                if (linkError) throw linkError;
 
-                // Update client's ladoo count
-                const { data: referral } = await supabase
+                const { data: referral, error: refError } = await supabase
                     .from('referrals')
                     .select('client_id')
-                    .eq('id', spinLink.referral_id)
+                    .eq('id', linkRow.referral_id)
                     .single();
+                if (refError) throw refError;
 
-                const { error: clientError } = await supabase.rpc('increment_ladoo_count', {
-                    client_id: referral.client_id,
-                    increment: ladooCount
-                });
+                // Update ladoo_count for client
+                const { data: clientData, error: clientFetchError } = await supabase
+                    .from('clients')
+                    .select('ladoo_count')
+                    .eq('id', referral.client_id)
+                    .single();
+                if (clientFetchError) throw clientFetchError;
 
-                if (clientError) throw clientError;
+                const newCount = (clientData.ladoo_count || 0) + countWon;
+                const { error: clientUpdateError } = await supabase
+                    .from('clients')
+                    .update({ ladoo_count: newCount })
+                    .eq('id', referral.client_id);
+                if (clientUpdateError) throw clientUpdateError;
 
                 alreadyUsed = true;
                 showResult(prize);
-                spinButton.disabled = true;
-            } catch (error) {
-                console.error('Error:', error);
-                showError('Something went wrong. Please try again.');
+                // Reload to enforce used flag check
+                setTimeout(() => window.location.reload(), 1200);
+            } catch (err) {
+                console.error('DB error:', err);
+                showError('Something went wrong.');
             }
         }
 
@@ -234,4 +196,4 @@
         }
     </script>
 </body>
-</html> 
+</html>
