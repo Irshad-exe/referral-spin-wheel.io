@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Add Referral</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Add New Referral</h1>
+        <form id="referral-form">
+            <div class="form-group">
+                <label for="client-select">Select Referring Client:</label>
+                <select id="client-select" required>
+                    <option value="">Select a client...</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="referee-name">New Client Name:</label>
+                <input type="text" id="referee-name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="referee-contact">New Client Contact:</label>
+                <input type="text" id="referee-contact" required>
+            </div>
+
+            <button type="submit">Generate Spin Link</button>
+        </form>
+
+        <div id="result-container" class="hidden">
+            <h2>Spin Link Generated!</h2>
+            <div class="link-container">
+                <input type="text" id="spin-link" readonly>
+                <button id="copy-link">Copy</button>
+            </div>
+            <div class="whatsapp-container">
+                <button id="whatsapp-share">Share on WhatsApp</button>
+            </div>
+        </div>
+
+        <div id="error-container" class="hidden">
+            <p id="error-message" class="error-text"></p>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script>
+        let clients = [];
+
+        // Load clients on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await loadClients();
+                setupFormHandlers();
+            } catch (error) {
+                showError('Error loading clients: ' + error.message);
+            }
+        });
+
+        async function loadClients() {
+            const { data, error } = await supabase
+                .from('clients')
+                .select('id, name, contact_info')
+                .order('name');
+
+            if (error) {
+                console.error('Error loading clients:', error);
+                throw new Error(error.message);
+            }
+
+            if (!data || data.length === 0) {
+                throw new Error('No clients found in the database');
+            }
+
+            clients = data;
+            const select = document.getElementById('client-select');
+            select.innerHTML = '<option value="">Select a client...</option>';
+            
+            clients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.id;
+                option.textContent = `${client.name} (${client.contact_info})`;
+                select.appendChild(option);
+            });
+        }
+
+        function setupFormHandlers() {
+            const form = document.getElementById('referral-form');
+            const copyButton = document.getElementById('copy-link');
+            const whatsappButton = document.getElementById('whatsapp-share');
+
+            form.addEventListener('submit', handleSubmit);
+            copyButton.addEventListener('click', copyToClipboard);
+            whatsappButton.addEventListener('click', shareOnWhatsApp);
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+            hideError();
+
+            const clientId = document.getElementById('client-select').value;
+            const refereeName = document.getElementById('referee-name').value;
+            const refereeContact = document.getElementById('referee-contact').value;
+
+            if (!clientId) {
+                showError('Please select a referring client');
+                return;
+            }
+
+            try {
+                // Create referral
+                const { data: referral, error: referralError } = await supabase
+                    .from('referrals')
+                    .insert({
+                        client_id: clientId,
+                        referee_name: refereeName,
+                        referee_contact: refereeContact,
+                        status: 'verified'
+                    })
+                    .select()
+                    .single();
+
+                if (referralError) {
+                    console.error('Referral Error:', referralError);
+                    throw referralError;
+                }
+
+                // Create spin link
+                const { data: spinLink, error: spinError } = await supabase
+                    .from('spin_links')
+                    .insert({
+                        referral_id: referral.id,
+                        token: crypto.randomUUID()
+                    })
+                    .select()
+                    .single();
+
+                if (spinError) {
+                    console.error('Spin Link Error:', spinError);
+                    throw spinError;
+                }
+
+                // Show result
+                const spinUrl = `${window.location.origin}/spin.html?token=${spinLink.token}`;
+                document.getElementById('spin-link').value = spinUrl;
+                document.getElementById('result-container').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Error creating referral: ' + error.message);
+            }
+        }
+
+        function copyToClipboard() {
+            const linkInput = document.getElementById('spin-link');
+            linkInput.select();
+            document.execCommand('copy');
+            alert('Link copied to clipboard!');
+        }
+
+        function shareOnWhatsApp() {
+            const link = document.getElementById('spin-link').value;
+            const message = `Spin the wheel to win ladoos! Click here: ${link}`;
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+        }
+
+        function showError(message) {
+            const errorContainer = document.getElementById('error-container');
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.textContent = message;
+            errorContainer.classList.remove('hidden');
+        }
+
+        function hideError() {
+            const errorContainer = document.getElementById('error-container');
+            errorContainer.classList.add('hidden');
+        }
+    </script>
+</body>
+</html> 

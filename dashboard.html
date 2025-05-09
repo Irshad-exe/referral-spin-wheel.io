@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Client Ladoo Dashboard</h1>
+        
+        <div class="stats-container">
+            <div class="stat-box">
+                <h3>Total Clients</h3>
+                <p id="total-clients">0</p>
+            </div>
+            <div class="stat-box">
+                <h3>Clients with 3+ Ladoos</h3>
+                <p id="eligible-clients">0</p>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="clients-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Contact</th>
+                        <th>Ladoo Count</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Client rows will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script>
+        // Load clients on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadClients();
+        });
+
+        async function loadClients() {
+            const { data: clients, error } = await supabase
+                .from('clients')
+                .select('*')
+                .order('ladoo_count', { ascending: false });
+
+            if (error) {
+                console.error('Error loading clients:', error);
+                return;
+            }
+
+            updateStats(clients);
+            updateTable(clients);
+        }
+
+        function updateStats(clients) {
+            document.getElementById('total-clients').textContent = clients.length;
+            const eligibleCount = clients.filter(c => c.ladoo_count >= 3).length;
+            document.getElementById('eligible-clients').textContent = eligibleCount;
+        }
+
+        function updateTable(clients) {
+            const tbody = document.querySelector('#clients-table tbody');
+            tbody.innerHTML = '';
+
+            clients.forEach(client => {
+                const row = document.createElement('tr');
+                if (client.ladoo_count >= 3) {
+                    row.classList.add('eligible');
+                }
+
+                row.innerHTML = `
+                    <td>${client.name}</td>
+                    <td>${client.contact_info}</td>
+                    <td>${client.ladoo_count}</td>
+                    <td>${getStatusText(client.ladoo_count)}</td>
+                    <td>
+                        <button onclick="viewReferrals('${client.id}')" class="btn-small">
+                            View Referrals
+                        </button>
+                    </td>
+                `;
+
+                tbody.appendChild(row);
+            });
+        }
+
+        function getStatusText(ladooCount) {
+            if (ladooCount >= 3) {
+                return '<span class="status-eligible">Eligible for Reward</span>';
+            } else {
+                return '<span class="status-pending">Pending</span>';
+            }
+        }
+
+        async function viewReferrals(clientId) {
+            const { data: referrals, error } = await supabase
+                .from('referrals')
+                .select(`
+                    *,
+                    spin_links (
+                        prize,
+                        used,
+                        used_at
+                    )
+                `)
+                .eq('client_id', clientId)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error loading referrals:', error);
+                return;
+            }
+
+            // Create and show modal with referrals
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <h2>Referral History</h2>
+                    <div class="referrals-list">
+                        ${referrals.map(ref => `
+                            <div class="referral-item">
+                                <p><strong>Referred:</strong> ${ref.referee_name}</p>
+                                <p><strong>Contact:</strong> ${ref.referee_contact}</p>
+                                <p><strong>Status:</strong> ${ref.status}</p>
+                                ${ref.spin_links[0] ? `
+                                    <p><strong>Spin Result:</strong> ${ref.spin_links[0].prize || 'Not used'}</p>
+                                    <p><strong>Used At:</strong> ${ref.spin_links[0].used_at || 'Not used'}</p>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button onclick="this.closest('.modal').remove()">Close</button>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+        }
+    </script>
+</body>
+</html> 

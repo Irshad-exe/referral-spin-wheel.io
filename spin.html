@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spin to Win!</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/spin-wheel@1.0.0/dist/spin-wheel.min.js"></script>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Spin to Win Ladoos!</h1>
+        <div id="wheel-container">
+            <canvas id="wheel"></canvas>
+        </div>
+        <button id="spin-button" disabled>Spin!</button>
+        <div id="result-modal" class="modal">
+            <div class="modal-content">
+                <h2>Congratulations!</h2>
+                <p id="result-text"></p>
+                <button id="close-modal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script>
+        let wheel;
+        let spinButton;
+        let resultModal;
+        let resultText;
+        let closeModalButton;
+        let currentToken;
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', async () => {
+            spinButton = document.getElementById('spin-button');
+            resultModal = document.getElementById('result-modal');
+            resultText = document.getElementById('result-text');
+            closeModalButton = document.getElementById('close-modal');
+
+            // Get token from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            currentToken = urlParams.get('token');
+
+            if (!currentToken) {
+                showError('No token provided');
+                return;
+            }
+
+            // Validate token
+            const { data: spinLink, error } = await supabase
+                .from('spin_links')
+                .select('*')
+                .eq('token', currentToken)
+                .single();
+
+            if (error || !spinLink) {
+                showError('Invalid token');
+                return;
+            }
+
+            if (spinLink.used) {
+                showError('This spin link has already been used');
+                return;
+            }
+
+            // Initialize wheel
+            initializeWheel();
+            spinButton.disabled = false;
+        });
+
+        function initializeWheel() {
+            const segments = PRIZES.map(prize => ({
+                text: prize.text,
+                fillStyle: getRandomColor(),
+                textFillStyle: '#ffffff'
+            }));
+
+            wheel = new SpinWheel({
+                canvas: document.getElementById('wheel'),
+                segments: segments,
+                onSpinComplete: handleSpinComplete
+            });
+
+            spinButton.addEventListener('click', () => {
+                spinButton.disabled = true;
+                wheel.spin();
+            });
+        }
+
+        async function handleSpinComplete(segment) {
+            const prize = segment.text;
+            const ladooCount = parseInt(prize) || 0;
+
+            try {
+                // Update spin link
+                const { error: spinError } = await supabase
+                    .from('spin_links')
+                    .update({
+                        used: true,
+                        prize: prize,
+                        used_at: new Date().toISOString()
+                    })
+                    .eq('token', currentToken);
+
+                if (spinError) throw spinError;
+
+                // Get referral details
+                const { data: spinLink } = await supabase
+                    .from('spin_links')
+                    .select('referral_id')
+                    .eq('token', currentToken)
+                    .single();
+
+                // Update client's ladoo count
+                const { data: referral } = await supabase
+                    .from('referrals')
+                    .select('client_id')
+                    .eq('id', spinLink.referral_id)
+                    .single();
+
+                const { error: clientError } = await supabase.rpc('increment_ladoo_count', {
+                    client_id: referral.client_id,
+                    increment: ladooCount
+                });
+
+                if (clientError) throw clientError;
+
+                // Show result
+                showResult(prize);
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Something went wrong. Please try again.');
+            }
+        }
+
+        function showResult(prize) {
+            resultText.textContent = `You won: ${prize}!`;
+            resultModal.style.display = 'block';
+        }
+
+        function showError(message) {
+            resultText.textContent = message;
+            resultModal.style.display = 'block';
+        }
+
+        closeModalButton.addEventListener('click', () => {
+            resultModal.style.display = 'none';
+        });
+
+        function getRandomColor() {
+            const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+    </script>
+</body>
+</html> 
