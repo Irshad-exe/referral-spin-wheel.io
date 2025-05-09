@@ -177,7 +177,12 @@
           duration: 5,
           spins: 8,
           callbackFinished: function() {
-            handleSpinComplete(wheel.getIndicatedSegment());
+            // Get the winning segment
+            const winningSegment = wheel.getIndicatedSegment();
+            // Log the result
+            console.log('Wheel stopped at segment:', winningSegment.text);
+            // Call the completion handler
+            handleSpinComplete(winningSegment);
           }
         }
       });
@@ -193,6 +198,12 @@
         
         // Start the wheel animation
         wheel.startAnimation();
+        
+        // Reset the button animation when the wheel stops
+        setTimeout(() => {
+          spinButton.style.animation = '';
+          spinButton.textContent = 'Spin!';
+        }, 5000); // Match the animation duration
       };
     }
 
