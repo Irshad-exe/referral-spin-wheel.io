@@ -8,17 +8,78 @@
     <script src="https://cdn.jsdelivr.net/npm/winwheel@1.0.1/dist/Winwheel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
     <link rel="stylesheet" href="/referral-spin-wheel.io/css/styles.css">
+    <style>
+        #wheel-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 40px 0 20px 0;
+            position: relative;
+        }
+        #wheel {
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+            border: 8px solid #4CAF50;
+            display: block;
+        }
+        .pointer {
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-bottom: 40px solid #e74c3c;
+            position: absolute;
+            top: -38px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+        }
+        #spin-button {
+            margin-top: 20px;
+            padding: 15px 40px;
+            font-size: 20px;
+            border-radius: 8px;
+            background: #4CAF50;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        #spin-button:disabled {
+            background: #bdbdbd;
+            cursor: not-allowed;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10;
+            left: 0; top: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.4);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: #fff;
+            padding: 40px 30px;
+            border-radius: 10px;
+            text-align: center;
+            min-width: 300px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Spin to Win Ladoos!</h1>
         <div id="wheel-container">
-            <canvas id="wheel"></canvas>
+            <div class="pointer"></div>
+            <canvas id="wheel" width="400" height="400"></canvas>
         </div>
         <button id="spin-button" disabled>Spin!</button>
         <div id="result-modal" class="modal">
             <div class="modal-content">
-                <h2>Congratulations!</h2>
+                <h2 id="result-title">Congratulations!</h2>
                 <p id="result-text"></p>
                 <button id="close-modal">Close</button>
             </div>
@@ -31,14 +92,16 @@
         let spinButton;
         let resultModal;
         let resultText;
+        let resultTitle;
         let closeModalButton;
         let currentToken;
+        let alreadyUsed = false;
 
-        // Initialize the page
         document.addEventListener('DOMContentLoaded', async () => {
             spinButton = document.getElementById('spin-button');
             resultModal = document.getElementById('result-modal');
             resultText = document.getElementById('result-text');
+            resultTitle = document.getElementById('result-title');
             closeModalButton = document.getElementById('close-modal');
 
             // Get token from URL
@@ -63,7 +126,9 @@
             }
 
             if (spinLink.used) {
-                showError('This spin link has already been used');
+                alreadyUsed = true;
+                showError('This spin link has already been used.');
+                spinButton.disabled = true;
                 return;
             }
 
@@ -94,6 +159,7 @@
 
             spinButton.disabled = false;
             spinButton.addEventListener('click', () => {
+                if (alreadyUsed) return;
                 spinButton.disabled = true;
                 wheel.startAnimation();
             });
@@ -137,8 +203,9 @@
 
                 if (clientError) throw clientError;
 
-                // Show result
+                alreadyUsed = true;
                 showResult(prize);
+                spinButton.disabled = true;
             } catch (error) {
                 console.error('Error:', error);
                 showError('Something went wrong. Please try again.');
@@ -146,13 +213,15 @@
         }
 
         function showResult(prize) {
+            resultTitle.textContent = 'Congratulations!';
             resultText.textContent = `You won: ${prize}!`;
-            resultModal.style.display = 'block';
+            resultModal.style.display = 'flex';
         }
 
         function showError(message) {
+            resultTitle.textContent = 'Sorry!';
             resultText.textContent = message;
-            resultModal.style.display = 'block';
+            resultModal.style.display = 'flex';
         }
 
         closeModalButton.addEventListener('click', () => {
