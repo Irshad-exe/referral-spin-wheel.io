@@ -7,6 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/winwheel@1.0.1/dist/Winwheel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
   <link rel="stylesheet" href="/referral-spin-wheel.io/css/styles.css">
   <style>
     existing style#wheel-container {
@@ -115,6 +116,19 @@
       resultText = document.getElementById('result-text');
       resultTitle = document.getElementById('result-title');
       closeModalButton = document.getElementById('close-modal');
+
+      // Initialize GSAP
+      gsap.registerPlugin(ScrollTrigger);
+
+      // Add event listeners
+      if (closeModalButton) {
+        closeModalButton.addEventListener('click', () => {
+          resultModal.style.display = 'none';
+          // Reset the spin button state
+          spinButton.disabled = false;
+          spinButton.textContent = 'Spin!';
+        });
+      }
 
       // Get token from URL
       const urlParams = new URLSearchParams(window.location.search);
@@ -250,13 +264,7 @@
       resultText.textContent = msg;
       resultModal.style.display = 'flex';
     }
-    // Add event listeners after elements are defined
-    closeModalButton.addEventListener('click', () => {
-      resultModal.style.display = 'none';
-      // Reset the spin button state
-      spinButton.disabled = false;
-      spinButton.textContent = 'Spin!';
-    });
+
     function getRandomColor(){ const c=['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFEEAD'];return c[Math.floor(Math.random()*c.length)];}
   </script>
 </body>
