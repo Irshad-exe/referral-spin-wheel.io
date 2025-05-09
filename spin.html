@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spin to Win!</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/spin-wheel@1.0.0/dist/spin-wheel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/winwheel@2.8.0/Winwheel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
     <link rel="stylesheet" href="/referral-spin-wheel.io/css/styles.css">
 </head>
 <body>
@@ -67,31 +68,39 @@
             }
 
             // Initialize wheel
+            if (typeof Winwheel === 'undefined') {
+                alert('Winwheel library failed to load!');
+                return;
+            }
             initializeWheel();
             spinButton.disabled = false;
         });
 
         function initializeWheel() {
-            const segments = PRIZES.map(prize => ({
-                text: prize.text,
-                fillStyle: getRandomColor(),
-                textFillStyle: '#ffffff'
-            }));
-
-            wheel = new SpinWheel({
-                canvas: document.getElementById('wheel'),
-                segments: segments,
-                onSpinComplete: handleSpinComplete
+            wheel = new Winwheel({
+                'canvasId': 'wheel',
+                'numSegments': PRIZES.length,
+                'segments': PRIZES.map(prize => ({
+                    'fillStyle': getRandomColor(),
+                    'text': prize.text
+                })),
+                'animation': {
+                    'type': 'spinToStop',
+                    'duration': 5,
+                    'spins': 8,
+                    'callbackFinished': handleSpinComplete
+                }
             });
 
+            spinButton.disabled = false;
             spinButton.addEventListener('click', () => {
                 spinButton.disabled = true;
-                wheel.spin();
+                wheel.startAnimation();
             });
         }
 
-        async function handleSpinComplete(segment) {
-            const prize = segment.text;
+        async function handleSpinComplete(indicatedSegment) {
+            const prize = indicatedSegment.text;
             const ladooCount = parseInt(prize) || 0;
 
             try {
