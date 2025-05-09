@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Referral Spin Wheel System</title>
     <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="container">
@@ -12,6 +13,10 @@
         <div class="nav-buttons">
             <a href="admin.html" class="button">Admin Panel</a>
             <a href="dashboard.html" class="button">Dashboard</a>
+        </div>
+        <div class="test-connection">
+            <button onclick="testConnection()" class="button test-btn">Test Connection</button>
+            <p id="connection-status"></p>
         </div>
     </div>
 
@@ -37,6 +42,50 @@
         .button:hover {
             background-color: #45a049;
         }
+
+        .test-connection {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .test-btn {
+            margin-bottom: 10px;
+        }
+
+        #connection-status {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        #connection-status.success {
+            color: #4CAF50;
+        }
+
+        #connection-status.error {
+            color: #f44336;
+        }
     </style>
+
+    <script src="js/config.js"></script>
+    <script>
+        async function testConnection() {
+            const status = document.getElementById('connection-status');
+            try {
+                const { data, error } = await supabase
+                    .from('clients')
+                    .select('count()')
+                    .single();
+                
+                if (error) throw error;
+                
+                status.textContent = 'Connection successful! Database is working.';
+                status.className = 'success';
+            } catch (error) {
+                console.error('Connection error:', error);
+                status.textContent = 'Connection failed: ' + error.message;
+                status.className = 'error';
+            }
+        }
+    </script>
 </body>
 </html> 
