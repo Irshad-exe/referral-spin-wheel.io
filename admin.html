@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Add Referral</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="/referral-spin-wheel.io/css/styles.css">
 </head>
 <body>
     <div class="container">
@@ -47,7 +47,7 @@
         </div>
     </div>
 
-    <script src="js/config.js"></script>
+    <script src="/referral-spin-wheel.io/js/config.js"></script>
     <script>
         let clients = [];
 
@@ -151,7 +151,7 @@
                 document.getElementById('result-container').classList.remove('hidden');
 
                 // Create WhatsApp sharing link with proper message
-                const whatsappMessage = `Here's your chance to win ladoos! Click this link to spin the wheel: ${spinUrl}`;
+                const whatsappMessage = `Spin the wheel to win ladoos! Click here: ${spinUrl}`;
                 document.getElementById('whatsapp-share').onclick = () => {
                     window.open(`https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`, '_blank');
                 };
@@ -188,4 +188,4 @@
         }
     </script>
 </body>
-</html> 
+</html>
