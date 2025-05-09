@@ -121,14 +121,23 @@
       currentToken = urlParams.get('token');
       if (!currentToken) return showError('No token provided');
 
-      // Validate token
+      // Validate token and check usage status
       const { data: spinLink, error } = await supabase
         .from('spin_links')
         .select('used')
         .eq('token', currentToken)
         .single();
+      
       if (error || !spinLink) return showError('Invalid token');
-      if (spinLink.used) return showError('This spin link has already been used.');
+      
+      if (spinLink.used) {
+        spinButton.disabled = true;
+        spinButton.textContent = 'Already Used';
+        resultModal.style.display = 'block';
+        resultTitle.textContent = 'Already Used';
+        resultText.textContent = 'This spin link has already been used.';
+        return;
+      }
 
       // Initialize wheel now that token is valid and unused
       initializeWheel();
