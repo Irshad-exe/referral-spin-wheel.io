@@ -10,6 +10,15 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.3/plugins/CSSPlugin.min.js"></script>
   <link rel="stylesheet" href="/referral-spin-wheel.io/css/styles.css">
   <style>
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
     existing style#wheel-container {
             display: flex;
             flex-direction: column;
@@ -47,6 +56,7 @@
             border: none;
             cursor: pointer;
             transition: background 0.2s;
+            position: relative;
         }
         #spin-button:disabled {
             background: #bdbdbd;
@@ -176,9 +186,12 @@
         if (alreadyUsed) return;
         console.log('Spin started');
         spinButton.disabled = true;
-        const winnerIndex = pickWeightedIndex(PRIZES);
-        console.log('Winner index selected:', winnerIndex);
-        wheel.animation.stopAngle = wheel.getRandomForSegment(winnerIndex + 1);
+        spinButton.textContent = 'Spinning...';
+        
+        // Add spinning animation to the button
+        spinButton.style.animation = 'spin 1s linear infinite';
+        
+        // Start the wheel animation
         wheel.startAnimation();
       };
     }
@@ -278,6 +291,9 @@
     }
 
     function showResult(prize) {
+      // Remove spinning animation from button
+      spinButton.style.animation = '';
+      
       resultTitle.textContent = 'Congratulations!';
       resultText.textContent = `You won: ${prize}!`;
       resultModal.style.display = 'flex';
