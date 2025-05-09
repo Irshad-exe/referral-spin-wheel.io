@@ -145,9 +145,16 @@
                 }
 
                 // Show result
-                const spinUrl = `${window.location.origin}/spin.html?token=${spinLink.token}`;
+                const baseUrl = 'https://irshad-exe.github.io/referral-spin-wheel.io';
+                const spinUrl = `${baseUrl}/spin.html?token=${spinLink.token}`;
                 document.getElementById('spin-link').value = spinUrl;
                 document.getElementById('result-container').classList.remove('hidden');
+
+                // Create WhatsApp sharing link with proper message
+                const whatsappMessage = `Here's your chance to win ladoos! Click this link to spin the wheel: ${spinUrl}`;
+                document.getElementById('whatsapp-share').onclick = () => {
+                    window.open(`https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`, '_blank');
+                };
             } catch (error) {
                 console.error('Error:', error);
                 showError('Error creating referral: ' + error.message);
