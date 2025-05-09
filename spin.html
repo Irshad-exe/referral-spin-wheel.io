@@ -177,11 +177,9 @@
           duration: 5,
           spins: 8,
           callbackFinished: function() {
-            // Get the winning segment
+            console.log('callbackFinished fired!');
             const winningSegment = wheel.getIndicatedSegment();
-            // Log the result
             console.log('Wheel stopped at segment:', winningSegment.text);
-            // Call the completion handler
             handleSpinComplete(winningSegment);
           }
         }
