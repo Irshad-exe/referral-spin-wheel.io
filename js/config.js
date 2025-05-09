@@ -23,4 +23,15 @@ const PRIZES = [
     { text: '2 Ladoos', weight: 20 },
     { text: 'Try Again', weight: 30 },
     { text: '3 Ladoos', weight: 10 }
-]; 
+];
+
+// Function to pick a weighted random prize
+const pickWeightedIndex = (prizes) => {
+    let total = prizes.reduce((s, p) => s + p.weight, 0);
+    let rand = Math.random() * total;
+    for (let i = 0; i < prizes.length; i++) {
+        if (rand < prizes[i].weight) return i;
+        rand -= prizes[i].weight;
+    }
+    return 0;
+};

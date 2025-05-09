@@ -31,6 +31,7 @@
                         <th>Ladoo Count</th>
                         <th>Status</th>
                         <th>Actions</th>
+                        <th>Spin Wheel</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -83,6 +84,9 @@
                     <td>${client.contact_info}</td>
                     <td>${client.ladoo_count}</td>
                     <td>${getStatusText(client.ladoo_count)}</td>
+                    <td>
+                        ${client.ladoo_count >= 3 ? '<button onclick="spinWheel(${client.id})" class="spin-button">Spin Wheel</button>' : ''}
+                    </td>
                     <td>
                         <button onclick="viewReferrals('${client.id}')" class="btn-small">
                             View Referrals
@@ -146,6 +150,79 @@
 
             document.body.appendChild(modal);
         }
+        async function spinWheel(clientId) {
+            const { data: client, error } = await supabase
+                .from('clients')
+                .select('*')
+                .eq('id', clientId)
+                .single();
+
+            if (error) {
+                console.error('Error loading client:', error);
+                return;
+            }
+
+            if (client.ladoo_count < 3) {
+                alert('Client needs at least 3 Ladoos to spin the wheel!');
+                return;
+            }
+
+            // Pick a random prize
+            const prizeIndex = pickWeightedIndex(PRIZES);
+            const prize = PRIZES[prizeIndex].text;
+            const countWon = parseInt(prize) || 0;
+
+            // Create a new spin link record
+            const { error: insertError } = await supabase
+                .from('spin_links')
+                .insert([
+                    {
+                        client_id: clientId,
+                        prize: prize,
+                        used: true,
+                        used_at: new Date().toISOString()
+                    }
+                ]);
+
+            if (insertError) {
+                console.error('Error creating spin link:', insertError);
+                return;
+            }
+
+            // Update client's ladoo count
+            const { error: updateError } = await supabase
+                .from('clients')
+                .update({ ladoo_count: client.ladoo_count + countWon })
+                .eq('id', clientId);
+
+            if (updateError) {
+                console.error('Error updating client:', updateError);
+                return;
+            }
+
+            // Refresh the table
+            await loadClients();
+            alert(`Congratulations! You won ${countWon} Ladoos!`);
+        }
+
+        // Add styles for spin button
+        document.head.innerHTML += `
+            <style>
+                .spin-button {
+                    background-color: #4CAF50;
+                    color: white;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 14px;
+                }
+                .spin-button:hover {
+                    background-color: #45a049;
+                }
+            </style>
+        `;
+
     </script>
 </body>
 </html> 

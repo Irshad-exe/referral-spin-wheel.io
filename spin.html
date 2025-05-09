@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Spin to Win!</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/winwheel@1.0.1/dist/Winwheel.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.3/TweenMax.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.3/plugins/CSSPlugin.min.js"></script>
   <link rel="stylesheet" href="/referral-spin-wheel.io/css/styles.css">
   <style>
     @keyframes spin {
@@ -103,12 +100,10 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ucXh3Y21uY3l0b2x6dHZ2cHZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4MDg0MjMsImV4cCI6MjA2MjM4NDQyM30.2Ad2Wv3YC9DwxOG82JBF21BGvkS6gbIFOpPXLCWkdso';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Prize configuration with weights
+    // Prize configuration
     const PRIZES = [
-      { text: '1 Ladoo',   weight: 40 },
-      { text: '2 Ladoos',  weight: 20 },
-      { text: 'Try Again', weight: 30 },
-      { text: '3 Ladoos',  weight: 10 }
+      { text: 'Ladoo', color: '#89f26e' },
+      { text: 'Better Luck Next Time', color: '#e7706f' }
     ];
 
     let wheel;
@@ -166,43 +161,92 @@
       initializeWheel();
     });
 
+    // Initialize the custom spinning wheel
     function initializeWheel() {
-      const segments = PRIZES.map(p => ({ fillStyle: getRandomColor(), text: p.text }));
-      wheel = new Winwheel({
-        canvasId: 'wheel',
-        numSegments: segments.length,
-        segments,
-        animation: {
-          type: 'spinToStop',
-          duration: 5,
-          spins: 8,
-          callbackFinished: function() {
-            console.log('callbackFinished fired!');
-            const winningSegment = wheel.getIndicatedSegment();
-            console.log('Wheel stopped at segment:', winningSegment.text);
-            handleSpinComplete(winningSegment);
+      const canvas = document.getElementById('wheel');
+      const ctx = canvas.getContext('2d');
+      let angle = 0;
+      let spinning = false;
+      let spinTimeout = null;
+
+      // Draw the wheel
+      function drawWheel() {
+        const numOptions = PRIZES.length;
+        const arc = 2 * Math.PI / numOptions;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < numOptions; i++) {
+          ctx.beginPath();
+          ctx.fillStyle = PRIZES[i].color;
+          ctx.moveTo(200, 200);
+          ctx.arc(200, 200, 200, angle + i * arc, angle + (i + 1) * arc);
+          ctx.lineTo(200, 200);
+          ctx.fill();
+          ctx.save();
+          ctx.translate(200, 200);
+          ctx.rotate(angle + (i + 0.5) * arc);
+          ctx.textAlign = "right";
+          ctx.fillStyle = "#333";
+          ctx.font = "bold 20px sans-serif";
+          ctx.fillText(PRIZES[i].text, 180, 10);
+          ctx.restore();
+        }
+      }
+
+      // Spin the wheel
+      function spinWheel() {
+        if (spinning) return;
+        spinning = true;
+        let spinAngle = Math.random() * 2 * Math.PI + 6 * Math.PI; // 3+ full spins
+        let duration = 3500; // ms
+        let start = null;
+        function animate(ts) {
+          if (!start) start = ts;
+          let elapsed = ts - start;
+          let progress = Math.min(elapsed / duration, 1);
+          let ease = 1 - Math.pow(1 - progress, 3); // ease out cubic
+          angle = spinAngle * ease;
+          drawWheel();
+          if (progress < 1) {
+            spinTimeout = requestAnimationFrame(animate);
+          } else {
+            spinning = false;
+            handleSpinComplete();
           }
         }
-      });
+        requestAnimationFrame(animate);
+      }
+
+      // Handle spin completion
+      function handleSpinComplete() {
+        const numOptions = PRIZES.length;
+        const arc = 2 * Math.PI / numOptions;
+        let selected = Math.floor(((2 * Math.PI - (angle % (2 * Math.PI))) % (2 * Math.PI)) / arc);
+        const prize = PRIZES[selected].text;
+
+        // Call your existing Supabase update logic here
+        updateDatabaseWithPrize(prize);
+      }
+
+      // Initialize the wheel
+      drawWheel();
       spinButton.disabled = false;
       spinButton.onclick = () => {
         if (alreadyUsed) return;
         console.log('Spin started');
         spinButton.disabled = true;
-        spinButton.textContent = 'Spinning...';
         
         // Add spinning animation to the button
         spinButton.style.animation = 'spin 1s linear infinite';
         
         // Start the wheel animation
-        wheel.startAnimation();
-        
-        // Reset the button animation when the wheel stops
-        setTimeout(() => {
-          spinButton.style.animation = '';
-          spinButton.textContent = 'Spin!';
-        }, 5000); // Match the animation duration
+        spinWheel();
       };
+
+      // Reset the button animation when the wheel stops
+      setTimeout(() => {
+        spinButton.style.animation = '';
+        spinButton.textContent = 'Spin!';
+      }, 5000); // Match the animation duration
     }
 
     const pickWeightedIndex = (prizes) => {
