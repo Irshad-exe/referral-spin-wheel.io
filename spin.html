@@ -102,8 +102,8 @@
 
     // Prize configuration
     const PRIZES = [
-      { text: 'Ladoo', color: '#89f26e' },
-      { text: 'Better Luck Next Time', color: '#e7706f' }
+      { text: 'Ladoo', color: '#89f26e', weight: 1 },
+      { text: 'Better Luck Next Time', color: '#e7706f', weight: 0 }
     ];
 
     let wheel;
@@ -122,13 +122,10 @@
       resultTitle = document.getElementById('result-title');
       closeModalButton = document.getElementById('close-modal');
 
-      // Initialize GSAP
-
       // Add event listeners
       if (closeModalButton) {
         closeModalButton.addEventListener('click', () => {
           resultModal.style.display = 'none';
-          // Reset the spin button state
           spinButton.disabled = false;
           spinButton.textContent = 'Spin!';
         });
@@ -161,7 +158,6 @@
       initializeWheel();
     });
 
-    // Initialize the custom spinning wheel
     function initializeWheel() {
       const canvas = document.getElementById('wheel');
       const ctx = canvas.getContext('2d');
@@ -169,7 +165,6 @@
       let spinning = false;
       let spinTimeout = null;
 
-      // Draw the wheel
       function drawWheel() {
         const numOptions = PRIZES.length;
         const arc = 2 * Math.PI / numOptions;
@@ -192,169 +187,111 @@
         }
       }
 
-      // Spin the wheel
       function spinWheel() {
         if (spinning) return;
         spinning = true;
-        let spinAngle = Math.random() * 2 * Math.PI + 6 * Math.PI; // 3+ full spins
-        let duration = 3500; // ms
+        let spinAngle = Math.random() * 2 * Math.PI + 6 * Math.PI;
+        let duration = 3500;
         let start = null;
         function animate(ts) {
           if (!start) start = ts;
           let elapsed = ts - start;
           let progress = Math.min(elapsed / duration, 1);
-          let ease = 1 - Math.pow(1 - progress, 3); // ease out cubic
+          let ease = 1 - Math.pow(1 - progress, 3);
           angle = spinAngle * ease;
           drawWheel();
           if (progress < 1) {
             spinTimeout = requestAnimationFrame(animate);
           } else {
             spinning = false;
-            handleSpinComplete();
+            handleSpinComplete(angle);
           }
         }
         requestAnimationFrame(animate);
       }
 
-      // Handle spin completion
-      function handleSpinComplete() {
+      async function handleSpinComplete(finalAngle) {
         const numOptions = PRIZES.length;
         const arc = 2 * Math.PI / numOptions;
-        let selected = Math.floor(((2 * Math.PI - (angle % (2 * Math.PI))) % (2 * Math.PI)) / arc);
+        let selected = Math.floor(((2 * Math.PI - (finalAngle % (2 * Math.PI))) % (2 * Math.PI)) / arc);
         const prize = PRIZES[selected].text;
-
-        // Call your existing Supabase update logic here
-        updateDatabaseWithPrize(prize);
+        let countWon = 0;
+        if (/\d+/.test(prize)) countWon = parseInt(prize.match(/\d+/)[0], 10);
+        if (prize === 'Ladoo') countWon = 1;
+        try {
+          const { data: spinLink, error: verifyError } = await supabase
+            .from('spin_links')
+            .select('*')
+            .eq('token', currentToken)
+            .eq('used', false)
+            .single();
+          if (verifyError || !spinLink) {
+            console.error('Token verification failed:', verifyError?.message);
+            throw new Error('Invalid or already used token');
+          }
+          const { error: updateLinkError, data: updateData } = await supabase
+            .from('spin_links')
+            .update({ used: true, prize, used_at: new Date().toISOString() })
+            .eq('id', spinLink.id)
+            .select('id');
+          if (updateLinkError || !updateData) {
+            console.error('Spin link update failed:', updateLinkError?.message);
+            throw new Error('Failed to update spin link: ' + (updateLinkError?.message || 'Unknown error'));
+          }
+          const { data: ref, error: refError } = await supabase
+            .from('referrals')
+            .select('client_id')
+            .eq('id', spinLink.referral_id)
+            .single();
+          if (refError || !ref) {
+            console.error('Failed to fetch client ID:', refError?.message);
+            throw new Error('Failed to fetch client_id: ' + (refError?.message || 'Unknown error'));
+          }
+          const { data: cli, error: cliError } = await supabase
+            .from('clients')
+            .select('ladoo_count')
+            .eq('id', ref.client_id)
+            .single();
+          if (cliError || !cli) {
+            console.error('Failed to fetch client data:', cliError?.message);
+            throw new Error('Failed to fetch client data: ' + (cliError?.message || 'Unknown error'));
+          }
+          const newCount = (cli.ladoo_count || 0) + countWon;
+          const { error: updateError } = await supabase
+            .from('clients')
+            .update({ ladoo_count: newCount })
+            .eq('id', ref.client_id)
+            .single();
+          if (updateError) {
+            console.error('Failed to update client data:', updateError?.message);
+            throw new Error('Failed to update client data: ' + (updateError?.message || 'Unknown error'));
+          }
+          alreadyUsed = true;
+          showResult(prize);
+          setTimeout(() => window.location.reload(), 1200);
+        } catch (error) {
+          console.error('Error:', error);
+          showError(error.message || 'An error occurred. Please try again.');
+        }
       }
 
-      // Initialize the wheel
       drawWheel();
       spinButton.disabled = false;
       spinButton.onclick = () => {
         if (alreadyUsed) return;
         console.log('Spin started');
         spinButton.disabled = true;
-        
-        // Add spinning animation to the button
         spinButton.style.animation = 'spin 1s linear infinite';
-        
-        // Start the wheel animation
         spinWheel();
       };
-
-      // Reset the button animation when the wheel stops
       setTimeout(() => {
         spinButton.style.animation = '';
         spinButton.textContent = 'Spin!';
-      }, 5000); // Match the animation duration
-    }
-
-    const pickWeightedIndex = (prizes) => {
-      let total = prizes.reduce((s, p) => s + p.weight, 0);
-      let rand = Math.random() * total;
-      for (let i = 0; i < prizes.length; i++) {
-        if (rand < prizes[i].weight) return i;
-        rand -= prizes[i].weight;
-      }
-      return 0;
-    }
-
-    async function handleSpinComplete(indicatedSegment) {
-      console.log('Spin completed');
-      const prize = indicatedSegment.text;
-      const countWon = parseInt(prize) || 0;
-      console.log('Prize won:', prize, 'Count:', countWon);
-      // TODO: Set clientId from your integration (e.g., from URL token, session, etc.)
-      const clientId = window.clientId || null;
-      if (!clientId) {
-        alert('Client ID not found. Cannot update database.');
-        return;
-      }
-      try {
-        await updateDatabaseWithPrize(clientId, prize, countWon);
-
-        // First, verify the token exists and is not used
-        console.log('Verifying token:', currentToken);
-        const { data: spinLink, error: verifyError } = await supabase
-          .from('spin_links')
-          .select('*')
-          .eq('token', currentToken)
-          .eq('used', false)
-          .single();
-
-        if (verifyError || !spinLink) {
-          console.error('Token verification failed:', verifyError?.message);
-          throw new Error('Invalid or already used token');
-        }
-        console.log('Token verified successfully');
-
-        // Mark used & record prize
-        console.log('Updating spin link:', spinLink.id);
-        const { error: updateLinkError, data: updateData } = await supabase
-          .from('spin_links')
-          .update({ used: true, prize, used_at: new Date().toISOString() })
-          .eq('id', spinLink.id)
-          .select('id');
-
-        if (updateLinkError || !updateData) {
-          console.error('Spin link update failed:', updateLinkError?.message);
-          throw new Error('Failed to update spin link: ' + (updateLinkError?.message || 'Unknown error'));
-        }
-        console.log('Spin link updated successfully');
-
-        // Update client ladoo_count
-        console.log('Fetching client ID for referral:', spinLink.referral_id);
-        const { data: ref, error: refError } = await supabase
-          .from('referrals')
-          .select('client_id')
-          .eq('id', spinLink.referral_id)
-          .single();
-
-        if (refError || !ref) {
-          console.error('Failed to fetch client ID:', refError?.message);
-          throw new Error('Failed to fetch client_id: ' + (refError?.message || 'Unknown error'));
-        }
-        console.log('Client ID fetched successfully:', ref.client_id);
-
-        const { data: cli, error: cliError } = await supabase
-          .from('clients')
-          .select('ladoo_count')
-          .eq('id', ref.client_id)
-          .single();
-
-        if (cliError || !cli) {
-          console.error('Failed to fetch client data:', cliError?.message);
-          throw new Error('Failed to fetch client data: ' + (cliError?.message || 'Unknown error'));
-        }
-        console.log('Current client ladoo count:', cli.ladoo_count);
-
-        const newCount = (cli.ladoo_count || 0) + countWon;
-        console.log('Updating client ladoo count to:', newCount);
-        const { error: updateError } = await supabase
-          .from('clients')
-          .update({ ladoo_count: newCount })
-          .eq('id', ref.client_id)
-          .single();
-
-        if (updateError) {
-          console.error('Failed to update client data:', updateError?.message);
-          throw new Error('Failed to update client data: ' + (updateError?.message || 'Unknown error'));
-        }
-        console.log('Client data updated successfully');
-
-        alreadyUsed = true;
-        showResult(prize);
-        setTimeout(() => window.location.reload(), 1200);
-      } catch (error) {
-        console.error('Error:', error);
-        showError(error.message || 'An error occurred. Please try again.');
-      }
+      }, 5000);
     }
 
     function showResult(prize) {
-      // Remove spinning animation from button
       spinButton.style.animation = '';
-      
       resultTitle.textContent = 'Congratulations!';
       resultText.textContent = `You won: ${prize}!`;
       resultModal.style.display = 'flex';
@@ -364,7 +301,6 @@
       resultText.textContent = msg;
       resultModal.style.display = 'flex';
     }
-
     function getRandomColor(){ const c=['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFEEAD'];return c[Math.floor(Math.random()*c.length)];}
   </script>
 </body>
