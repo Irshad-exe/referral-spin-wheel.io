@@ -164,7 +164,12 @@
         numSegments: segments.length,
         segments,
         animation: {
-          type: 'spinToStop', duration: 5, spins: 8, callbackFinished: handleSpinComplete
+          type: 'spinToStop',
+          duration: 5,
+          spins: 8,
+          callbackFinished: function() {
+            handleSpinComplete(wheel.getIndicatedSegment());
+          }
         }
       });
       spinButton.disabled = false;
@@ -179,7 +184,7 @@
       };
     }
 
-    function pickWeightedIndex(prizes) {
+    const pickWeightedIndex = (prizes) => {
       let total = prizes.reduce((s, p) => s + p.weight, 0);
       let rand = Math.random() * total;
       for (let i = 0; i < prizes.length; i++) {
