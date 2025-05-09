@@ -190,13 +190,13 @@
         }
 
         // Mark used & record prize
-        const { error: updateError, data: updateData } = await supabase
+        const { error: updateLinkError, data: updateData } = await supabase
           .from('spin_links')
           .update({ used: true, prize, used_at: new Date().toISOString() })
           .eq('id', spinLink.id)
           .select('id');
 
-        if (updateError || !updateData) {
+        if (updateLinkError || !updateData) {
           throw new Error('Failed to update spin link: ' + (updateError?.message || 'Unknown error'));
         }
 
