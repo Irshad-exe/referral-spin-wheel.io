@@ -177,26 +177,51 @@
       const prize = indicatedSegment.text;
       const countWon = parseInt(prize) || 0;
       try {
+        // First, verify the token exists and is not used
+        const { data: spinLink, error: verifyError } = await supabase
+          .from('spin_links')
+          .select('id')
+          .eq('token', currentToken)
+          .eq('used', false)
+          .single();
+
+        if (verifyError || !spinLink) {
+          throw new Error('Invalid or already used token');
+        }
+
         // Mark used & record prize
-        const { error: uErr } = await supabase
+        const { error: updateError } = await supabase
           .from('spin_links')
           .update({ used: true, prize, used_at: new Date().toISOString() })
-          .eq('token', currentToken);
-        if (uErr) throw uErr;
+          .eq('id', spinLink.id);
+
+        if (updateError) {
+          throw updateError;
+        }
 
         // Fetch referral_id
-        const { data: row } = await supabase
+        const { data: row, error: rowError } = await supabase
           .from('spin_links')
           .select('referral_id')
-          .eq('token', currentToken)
+          .eq('id', spinLink.id)
           .single();
+
+        if (rowError || !row) {
+          throw new Error('Failed to fetch referral_id');
+        }
+
         // Update client ladoo_count
-        const { data: ref } = await supabase
+        const { data: ref, error: refError } = await supabase
           .from('referrals')
           .select('client_id')
           .eq('id', row.referral_id)
           .single();
-        const { data: cli } = await supabase
+
+        if (refError || !ref) {
+          throw new Error('Failed to fetch client_id');
+        }
+
+        const { data: cli, error: cliError } = await supabase
           .from('clients')
           .select('ladoo_count')
           .eq('id', ref.client_id)
