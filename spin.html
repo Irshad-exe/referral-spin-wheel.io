@@ -264,7 +264,15 @@
       const prize = indicatedSegment.text;
       const countWon = parseInt(prize) || 0;
       console.log('Prize won:', prize, 'Count:', countWon);
+      // TODO: Set clientId from your integration (e.g., from URL token, session, etc.)
+      const clientId = window.clientId || null;
+      if (!clientId) {
+        alert('Client ID not found. Cannot update database.');
+        return;
+      }
       try {
+        await updateDatabaseWithPrize(clientId, prize, countWon);
+
         // First, verify the token exists and is not used
         console.log('Verifying token:', currentToken);
         const { data: spinLink, error: verifyError } = await supabase
