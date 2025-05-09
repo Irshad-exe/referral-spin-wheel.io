@@ -211,7 +211,7 @@
           .select('id');
 
         if (updateLinkError || !updateData) {
-          throw new Error('Failed to update spin link: ' + (updateError?.message || 'Unknown error'));
+          throw new Error('Failed to update spin link: ' + (updateLinkError?.message || 'Unknown error'));
         }
 
         // Update client ladoo_count
@@ -239,7 +239,8 @@
         const { error: updateError } = await supabase
           .from('clients')
           .update({ ladoo_count: newCount })
-          .eq('id', ref.client_id);
+          .eq('id', ref.client_id)
+          .single();
 
         if (updateError) {
           throw new Error('Failed to update client data: ' + (updateError?.message || 'Unknown error'));
