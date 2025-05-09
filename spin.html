@@ -180,7 +180,7 @@
         // First, verify the token exists and is not used
         const { data: spinLink, error: verifyError } = await supabase
           .from('spin_links')
-          .select('id')
+          .select('*')
           .eq('token', currentToken)
           .eq('used', false)
           .single();
@@ -190,35 +190,25 @@
         }
 
         // Mark used & record prize
-        const { error: updateError } = await supabase
+        const { error: updateError, data: updateData } = await supabase
           .from('spin_links')
           .update({ used: true, prize, used_at: new Date().toISOString() })
-          .eq('id', spinLink.id);
-
-        if (updateError) {
-          throw updateError;
-        }
-
-        // Fetch referral_id
-        const { data: row, error: rowError } = await supabase
-          .from('spin_links')
-          .select('referral_id')
           .eq('id', spinLink.id)
-          .single();
+          .select('id');
 
-        if (rowError || !row) {
-          throw new Error('Failed to fetch referral_id');
+        if (updateError || !updateData) {
+          throw new Error('Failed to update spin link: ' + (updateError?.message || 'Unknown error'));
         }
 
         // Update client ladoo_count
         const { data: ref, error: refError } = await supabase
           .from('referrals')
           .select('client_id')
-          .eq('id', row.referral_id)
+          .eq('id', spinLink.referral_id)
           .single();
 
         if (refError || !ref) {
-          throw new Error('Failed to fetch client_id');
+          throw new Error('Failed to fetch client_id: ' + (refError?.message || 'Unknown error'));
         }
 
         const { data: cli, error: cliError } = await supabase
@@ -226,15 +216,27 @@
           .select('ladoo_count')
           .eq('id', ref.client_id)
           .single();
-        const newCount = (cli.ladoo_count||0) + countWon;
-        await supabase.from('clients').update({ ladoo_count:newCount }).eq('id',ref.client_id);
+
+        if (cliError || !cli) {
+          throw new Error('Failed to fetch client data: ' + (cliError?.message || 'Unknown error'));
+        }
+
+        const newCount = (cli.ladoo_count || 0) + countWon;
+        const { error: updateError } = await supabase
+          .from('clients')
+          .update({ ladoo_count: newCount })
+          .eq('id', ref.client_id);
+
+        if (updateError) {
+          throw new Error('Failed to update client data: ' + (updateError?.message || 'Unknown error'));
+        }
 
         alreadyUsed = true;
         showResult(prize);
         setTimeout(() => window.location.reload(), 1200);
-      } catch (e) {
-        console.error(e);
-        showError('Something went wrong.');
+      } catch (error) {
+        console.error('Error:', error);
+        showError(error.message || 'An error occurred. Please try again.');
       }
     }
 
@@ -248,7 +250,13 @@
       resultText.textContent = msg;
       resultModal.style.display = 'flex';
     }
-    closeModalButton.addEventListener('click', ()=> resultModal.style.display='none');
+    // Add event listeners after elements are defined
+    closeModalButton.addEventListener('click', () => {
+      resultModal.style.display = 'none';
+      // Reset the spin button state
+      spinButton.disabled = false;
+      spinButton.textContent = 'Spin!';
+    });
     function getRandomColor(){ const c=['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFEEAD'];return c[Math.floor(Math.random()*c.length)];}
   </script>
 </body>
