@@ -73,8 +73,8 @@
             try {
                 const { data, error } = await supabase
                     .from('clients')
-                    .select('count()')
-                    .single();
+                    .select('id')
+                    .limit(1);
                 
                 if (error) throw error;
                 
