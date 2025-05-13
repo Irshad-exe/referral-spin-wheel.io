@@ -7,6 +7,8 @@ CREATE TABLE clients (
     name TEXT NOT NULL,
     contact_info TEXT NOT NULL,
     ladoo_count INTEGER DEFAULT 0,
+    email TEXT,
+    ucc TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
