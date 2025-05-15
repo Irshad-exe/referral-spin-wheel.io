@@ -145,7 +145,9 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
+    <script type="module">
+        import { ROUTES, navigateTo } from '/js/routes.js';
+
         document.addEventListener('DOMContentLoaded', async function() {
             // Load navbar
             fetch('components/navbar.html')
@@ -226,7 +228,7 @@
                     
                     // Redirect to admin dashboard after a short delay
                     setTimeout(() => {
-                        window.location.href = '/admin-dashboard.html';
+                        navigateTo(ROUTES.ADMIN_DASHBOARD);
                     }, 2000);
                     
                 } catch (error) {

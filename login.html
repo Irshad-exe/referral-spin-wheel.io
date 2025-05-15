@@ -192,6 +192,7 @@
     
     <script type="module">
         import { signIn } from '/js/admin-auth.js';
+        import { ROUTES, getRedirectUrl, clearRedirectUrl, navigateTo } from '/js/routes.js';
         
         // DOM Elements
         const loginForm = document.getElementById('loginForm');
@@ -265,15 +266,15 @@
                 if (success) {
                     showAlert('Login successful! Redirecting...', 'success');
                     // Get the redirect URL from session storage or default to dashboard
-                    const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || '/dashboard.html';
+                    const redirectUrl = getRedirectUrl();
                     console.log('Redirecting to:', redirectUrl);
                     
                     // Clear the redirect URL from session storage
-                    sessionStorage.removeItem('redirectAfterLogin');
+                    clearRedirectUrl();
                     
                     // Add a small delay to show the success message
                     setTimeout(() => {
-                        window.location.href = redirectUrl;
+                        navigateTo(redirectUrl);
                     }, 1000);
                 } else {
                     throw new Error(error || 'Failed to sign in');

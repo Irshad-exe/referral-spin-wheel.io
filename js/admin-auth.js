@@ -219,6 +219,8 @@ async function checkSessionStatus() {
     }
 }
 
+import { ROUTES, PUBLIC_PAGES, navigateTo, setRedirectUrl, getRedirectUrl, clearRedirectUrl } from './routes.js';
+
 // Add session check to auth middleware
 async function authMiddleware() {
     console.log('Auth middleware running...'); // Debug log
@@ -226,11 +228,8 @@ async function authMiddleware() {
     const currentPath = window.location.pathname;
     console.log('Current path:', currentPath); // Debug log
     
-    // List of public pages that don't require authentication
-    const publicPages = ['/login.html', '/index.html', '/'];
-    
     // Skip auth check for public pages
-    if (publicPages.includes(currentPath)) {
+    if (PUBLIC_PAGES.includes(currentPath)) {
         console.log('Public page detected, skipping auth check'); // Debug log
         return;
     }
@@ -244,8 +243,8 @@ async function authMiddleware() {
         if (!isAuthenticated || !isAdmin) {
             console.log('User not authenticated or not admin, redirecting to login'); // Debug log
             // Store the attempted URL to redirect back after login
-            sessionStorage.setItem('redirectAfterLogin', currentPath);
-            window.location.href = '/login.html';
+            setRedirectUrl(currentPath);
+            navigateTo(ROUTES.LOGIN);
             return;
         }
 
@@ -256,7 +255,7 @@ async function authMiddleware() {
         }
     } catch (error) {
         console.error('Error in auth middleware:', error);
-        window.location.href = '/login.html';
+        navigateTo(ROUTES.LOGIN);
     }
 }
 
@@ -271,17 +270,17 @@ document.addEventListener('DOMContentLoaded', () => {
 supabase?.auth.onAuthStateChange(async (event, session) => {
     console.log('Auth state changed:', event, session); // Debug log
     if (event === 'SIGNED_OUT') {
-        window.location.href = '/login.html';
+        navigateTo(ROUTES.LOGIN);
     } else if (event === 'SIGNED_IN') {
         const { isAdmin } = await checkAuth();
         if (!isAdmin) {
             await supabase.auth.signOut();
-            window.location.href = '/login.html';
+            navigateTo(ROUTES.LOGIN);
         } else {
             // Redirect to stored URL or default to dashboard
-            const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || '/dashboard.html';
-            sessionStorage.removeItem('redirectAfterLogin');
-            window.location.href = redirectUrl;
+            const redirectUrl = getRedirectUrl();
+            clearRedirectUrl();
+            navigateTo(redirectUrl);
         }
     }
 });
@@ -295,8 +294,7 @@ window.addEventListener('click', async (e) => {
         const currentPath = url.pathname;
         
         // Skip for public pages
-        const publicPages = ['/login.html', '/index.html', '/'];
-        if (publicPages.includes(currentPath)) {
+        if (PUBLIC_PAGES.includes(currentPath)) {
             return;
         }
 
@@ -304,8 +302,8 @@ window.addEventListener('click', async (e) => {
         const { isAuthenticated, isAdmin } = await checkAuth();
         if (!isAuthenticated || !isAdmin) {
             e.preventDefault();
-            sessionStorage.setItem('redirectAfterLogin', currentPath);
-            window.location.href = '/login.html';
+            setRedirectUrl(currentPath);
+            navigateTo(ROUTES.LOGIN);
         }
     }
 });
@@ -313,12 +311,11 @@ window.addEventListener('click', async (e) => {
 // Add history state change protection
 window.addEventListener('popstate', async () => {
     const currentPath = window.location.pathname;
-    const publicPages = ['/login.html', '/index.html', '/'];
     
-    if (!publicPages.includes(currentPath)) {
+    if (!PUBLIC_PAGES.includes(currentPath)) {
         const { isAuthenticated, isAdmin } = await checkAuth();
         if (!isAuthenticated || !isAdmin) {
-            window.location.href = '/login.html';
+            navigateTo(ROUTES.LOGIN);
         }
     }
 });

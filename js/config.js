@@ -1,4 +1,4 @@
-// Replace these with your Supabase project URL and anon key
+// Supabase Configuration
 const SUPABASE_URL = 'https://nnqxwcmncytolztvvpvi.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ucXh3Y21uY3l0b2x6dHZ2cHZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4MDg0MjMsImV4cCI6MjA2MjM4NDQyM30.2Ad2Wv3YC9DwxOG82JBF21BGvkS6gbIFOpPXLCWkdso';
 
@@ -8,14 +8,11 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: true
-    },
-    global: {
-        headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-        }
     }
 });
+
+// Export configuration
+export { SUPABASE_URL, SUPABASE_ANON_KEY, supabase };
 
 // Prize configuration for the spin wheel
 const PRIZES = [
