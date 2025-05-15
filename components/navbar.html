@@ -1,7 +1,7 @@
 <!-- Navigation -->
 <nav class="navbar">
     <div class="container">
-        <a href="/" class="company-name">
+        <a href="https://irshad-exe.github.io/referral-spin-wheel.io/index.html" class="company-name">
             <span>LakshInvestment</span>
         </a>
         
@@ -12,7 +12,7 @@
         </button>
         
         <div class="nav-links" id="navLinks">
-            <a href="/" class="nav-link">Home</a>
+            <a href="https://irshad-exe.github.io/referral-spin-wheel.io/index.html" class="nav-link">Home</a>
             <a href="https://irshad-exe.github.io/referral-spin-wheel.io/dashboard.html" class="nav-link">Dashboard</a>
             <div class="nav-dropdown">
                 <button class="nav-link nav-dropdown-toggle">
@@ -28,8 +28,22 @@
     </div>
 </nav>
 
-<script>
+<script type="module">
+import { ROUTES, navigateTo } from '../js/admin-auth.js';
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Update all navigation links to use ROUTES
+    const links = document.querySelectorAll('a[href]');
+    links.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const href = link.getAttribute('href');
+            if (href.includes('referral-spin-wheel.io')) {
+                navigateTo(href);
+            }
+        });
+    });
+
     // Mobile menu toggle
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const navLinks = document.getElementById('navLinks');
