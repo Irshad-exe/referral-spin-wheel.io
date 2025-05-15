@@ -72,53 +72,22 @@
     </main>
 
     <script type="module">
-        import { supabase } from './js/admin-auth.js';
-        import { ROUTES, navigateTo } from './js/routes.js';
+        import { supabase, initializeMiddleware } from './js/admin-auth.js';
         
-        // Initialize Supabase client
-        const SUPABASE_URL = 'https://nnqxwcmncytolztvvpvi.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ucXh3Y21uY3l0b2x6dHZ2cHZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4MDg0MjMsImV4cCI6MjA2MjM4NDQyM30.2Ad2Wv3YC9DwxOG82JBF21BGvkS6gbIFOpPXLCWkdso';
-        
-        // Wait for Supabase to be loaded
-        async function waitForSupabase() {
-            return new Promise((resolve) => {
-                if (window.supabase) {
-                    resolve();
-                } else {
-                    const checkSupabase = setInterval(() => {
-                        if (window.supabase) {
-                            clearInterval(checkSupabase);
-                            resolve();
-                        }
-                    }, 100);
-                }
-            });
-        }
-
-        // Initialize Supabase client
-        async function initializeSupabase() {
-            await waitForSupabase();
-            console.log('Supabase loaded, initializing client...');
-            const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-                auth: {
-                    autoRefreshToken: true,
-                    persistSession: true,
-                    detectSessionInUrl: true
-                }
-            });
-            console.log('Supabase client initialized');
-            return supabaseClient;
-        }
-
-        // Initialize Supabase and load data
-        let supabaseClient;
+        // Initialize Supabase and middleware
         async function initialize() {
             try {
-                supabaseClient = await initializeSupabase();
+                // Check authentication first
+                const isAuthenticated = await initializeMiddleware();
+                if (!isAuthenticated) {
+                    return;
+                }
+                
+                // Load clients if authenticated
                 await loadClients();
             } catch (error) {
                 console.error('Initialization error:', error);
-                navigateTo(ROUTES.LOGIN);
+                window.location.href = './login.html';
             }
         }
         

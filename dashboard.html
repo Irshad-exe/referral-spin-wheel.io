@@ -186,280 +186,165 @@
     </main>
 
     <script type="module">
-        import { supabase } from './js/admin-auth.js';
-        import { ROUTES, navigateTo } from './js/routes.js';
+        import { supabase, initializeMiddleware } from './js/admin-auth.js';
         
-        // Initialize Supabase client
-        const SUPABASE_URL = 'https://nnqxwcmncytolztvvpvi.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ucXh3Y21uY3l0b2x6dHZ2cHZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4MDg0MjMsImV4cCI6MjA2MjM4NDQyM30.2Ad2Wv3YC9DwxOG82JBF21BGvkS6gbIFOpPXLCWkdso';
-        
-        // Wait for Supabase to be loaded
-        async function waitForSupabase() {
-            return new Promise((resolve) => {
-                if (window.supabase) {
-                    resolve();
-                } else {
-                    const checkSupabase = setInterval(() => {
-                        if (window.supabase) {
-                            clearInterval(checkSupabase);
-                            resolve();
-                        }
-                    }, 100);
-                }
-            });
-        }
-
-        // Initialize Supabase client
-        async function initializeSupabase() {
-            await waitForSupabase();
-            console.log('Supabase loaded, initializing client...');
-            const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-                auth: {
-                    autoRefreshToken: true,
-                    persistSession: true,
-                    detectSessionInUrl: true
-                }
-            });
-            console.log('Supabase client initialized');
-            return supabaseClient;
-        }
-
-        // Initialize Supabase and load data
-        let supabaseClient;
+        // Initialize Supabase and middleware
         async function initialize() {
             try {
-                supabaseClient = await initializeSupabase();
+                // Check authentication first
+                const isAuthenticated = await initializeMiddleware();
+                if (!isAuthenticated) {
+                    return;
+                }
+                
+                // Load clients if authenticated
                 await loadClients();
             } catch (error) {
                 console.error('Initialization error:', error);
-                navigateTo(ROUTES.LOGIN);
+                window.location.href = './login.html';
             }
         }
-
-        // Load clients data
+        
+        // Load clients from Supabase
         async function loadClients() {
             try {
-                const { data: clients, error } = await supabaseClient
+                const { data: clients, error } = await supabase
                     .from('clients')
                     .select('*')
-                    .order('ladoo_count', { ascending: false });
-
-                if (error) {
-                    console.error('Error loading clients:', error);
-                    return;
-                }
-
-                updateStats(clients);
-                updateTable(clients);
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                updateClientStats(clients);
+                renderClientTable(clients);
             } catch (error) {
-                console.error('Error in loadClients:', error);
+                console.error('Error loading clients:', error);
+                showAlert('Error loading clients. Please try again.', 'error');
             }
         }
-
-        function updateStats(clients) {
-            document.getElementById('total-clients').textContent = clients.length;
-            const eligibleCount = clients.filter(c => c.ladoo_count >= 3).length;
-            document.getElementById('eligible-clients').textContent = eligibleCount;
+        
+        // Update client statistics
+        function updateClientStats(clients) {
+            const totalClients = clients.length;
+            const activeClients = clients.filter(client => client.status === 'active').length;
+            const pendingClients = clients.filter(client => client.status === 'pending').length;
+            
+            document.getElementById('total-clients').textContent = totalClients;
+            document.getElementById('active-clients').textContent = activeClients;
+            document.getElementById('pending-clients').textContent = pendingClients;
         }
-
-        function updateTable(clients) {
-            const tbody = document.querySelector('#clients-table tbody');
+        
+        // Render client table
+        function renderClientTable(clients) {
+            const tbody = document.getElementById('clients-tbody');
             tbody.innerHTML = '';
-
+            
             clients.forEach(client => {
                 const row = document.createElement('tr');
-                if (client.ladoo_count >= 3) {
-                    row.classList.add('eligible');
+                
+                // Format created_at date
+                const createdAt = client.created_at ? new Date(client.created_at).toLocaleDateString() : 'N/A';
+                
+                // Determine status badge
+                let statusClass = 'status-inactive';
+                let statusText = 'Inactive';
+                
+                if (client.status === 'active') {
+                    statusClass = 'status-active';
+                    statusText = 'Active';
+                } else if (client.status === 'pending') {
+                    statusClass = 'status-pending';
+                    statusText = 'Pending';
                 }
-
+                
                 row.innerHTML = `
-                    <td>${client.name}</td>
-                    <td>${client.contact_info}</td>
-                    <td>${client.ladoo_count}</td>
-                    <td>${getStatusText(client.ladoo_count)}</td>
-                    <td>
-                        ${client.ladoo_count >= 3 ? '<button onclick="spinWheel(${client.id})" class="spin-button">Spin Wheel</button>' : ''}
-                    </td>
-                    <td>
-                        <button onclick="viewReferrals('${client.id}')" class="btn-small">
-                            View Referrals
+                    <td data-label="Name">${escapeHtml(client.name || 'N/A')}</td>
+                    <td data-label="Email">${escapeHtml(client.email || 'N/A')}</td>
+                    <td data-label="UCC">${escapeHtml(client.ucc || 'N/A')}</td>
+                    <td data-label="Contact">${escapeHtml(client.contact_info || 'N/A')}</td>
+                    <td data-label="Status"><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td data-label="Actions">
+                        <button class="button btn-outline-primary btn-sm" onclick="viewReferrals(${client.id})">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                        <button class="button btn-outline-success btn-sm" onclick="spinWheel(${client.id})">
+                            <i class="fas fa-gift"></i> Spin
                         </button>
                     </td>
                 `;
-
+                
                 tbody.appendChild(row);
             });
         }
-
-        function getStatusText(ladooCount) {
-            if (ladooCount >= 3) {
-                return '<span class="status-eligible">Eligible for Reward</span>';
-            } else {
-                return '<span class="status-pending">Pending</span>';
-            }
-        }
-
-        async function viewReferrals(clientId) {
-            const { data: referrals, error } = await supabaseClient
-                .from('referrals')
-                .select(`
-                    *,
-                    spin_links (
-                        prize,
-                        used,
-                        used_at
-                    )
-                `)
-                .eq('client_id', clientId)
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                console.error('Error loading referrals:', error);
-                return;
-            }
-
-            // Create and show modal with referrals
-            const modal = document.createElement('div');
-            modal.className = 'modal';
-            modal.innerHTML = `
-                <div class="modal-content">
-                    <h2>Referral History</h2>
-                    <div class="referrals-list">
-                        ${referrals.map(ref => `
-                            <div class="referral-item">
-                                <p><strong>Referred:</strong> ${ref.referee_name}</p>
-                                <p><strong>Contact:</strong> ${ref.referee_contact}</p>
-                                <p><strong>Status:</strong> ${ref.status}</p>
-                                ${ref.spin_links[0] ? `
-                                    <p><strong>Spin Result:</strong> ${ref.spin_links[0].prize || 'Not used'}</p>
-                                    <p><strong>Used At:</strong> ${ref.spin_links[0].used_at || 'Not used'}</p>
-                                ` : ''}
-                            </div>
-                        `).join('')}
-                    </div>
-                    <button onclick="this.closest('.modal').remove()">Close</button>
-                </div>
-            `;
-
-            document.body.appendChild(modal);
-        }
-
-        async function spinWheel(clientId) {
-            const { data: client, error } = await supabaseClient
-                .from('clients')
-                .select('*')
-                .eq('id', clientId)
-                .single();
-
-            if (error) {
-                console.error('Error loading client:', error);
-                return;
-            }
-
-            if (client.ladoo_count < 3) {
-                alert('Client needs at least 3 Ladoos to spin the wheel!');
-                return;
-            }
-
-            // Pick a random prize
-            const prizeIndex = pickWeightedIndex(PRIZES);
-            const prize = PRIZES[prizeIndex].text;
-            const countWon = parseInt(prize) || 0;
-
-            // Create a new spin link record
-            const { error: insertError } = await supabaseClient
-                .from('spin_links')
-                .insert([
-                    {
-                        client_id: clientId,
-                        prize: prize,
-                        used: true,
-                        used_at: new Date().toISOString()
-                    }
-                ]);
-
-            if (insertError) {
-                console.error('Error creating spin link:', insertError);
-                return;
-            }
-
-            // Update client's ladoo count
-            const { error: updateError } = await supabaseClient
-                .from('clients')
-                .update({ ladoo_count: client.ladoo_count + countWon })
-                .eq('id', clientId);
-
-            if (updateError) {
-                console.error('Error updating client:', updateError);
-                return;
-            }
-
-            // Refresh the table
-            await loadClients();
-            alert(`Congratulations! You won ${countWon} Ladoos!`);
-        }
-
-        // Load navigation
-        fetch('components/navbar.html')
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById('navbar').innerHTML = html;
-                
-                // Initialize mobile menu
-                const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-                const navLinks = document.getElementById('navLinks');
-                const dropdownToggles = document.querySelectorAll('.nav-dropdown-toggle');
-                
-                if (mobileMenuBtn && navLinks) {
-                    mobileMenuBtn.addEventListener('click', function() {
-                        this.classList.toggle('active');
-                        navLinks.classList.toggle('active');
-                        document.body.classList.toggle('menu-open');
-                    });
-                }
-                
-                // Dropdown toggle for mobile
-                dropdownToggles.forEach(toggle => {
-                    toggle.addEventListener('click', function(e) {
-                        if (window.innerWidth <= 768) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            const dropdown = this.closest('.nav-dropdown');
-                            dropdown.classList.toggle('active');
-                        }
-                    });
-                });
-                
-                // Close dropdowns when clicking outside
-                document.addEventListener('click', function(e) {
-                    if (window.innerWidth > 768) return;
-                    
-                    const isClickInsideNav = navLinks && navLinks.contains(e.target);
-                    const isClickOnMenuBtn = mobileMenuBtn && mobileMenuBtn.contains(e.target);
-                    
-                    if (!isClickInsideNav && !isClickOnMenuBtn) {
-                        if (mobileMenuBtn) mobileMenuBtn.classList.remove('active');
-                        if (navLinks) navLinks.classList.remove('active');
-                        document.body.classList.remove('menu-open');
-                    }
-                });
-            })
-            .catch(error => {
-                console.error('Error loading navigation:', error);
-            });
         
-        // Close dropdown when resizing to desktop
-        window.addEventListener('resize', function() {
-            const dropdowns = document.querySelectorAll('.nav-dropdown');
-            if (window.innerWidth > 768) {
-                dropdowns.forEach(dropdown => {
-                    dropdown.classList.remove('active');
-                });
+        // View client referrals
+        async function viewReferrals(clientId) {
+            try {
+                const { data: referrals, error } = await supabase
+                    .from('referrals')
+                    .select('*')
+                    .eq('client_id', clientId)
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                // TODO: Implement referral view modal
+                console.log('Referrals:', referrals);
+            } catch (error) {
+                console.error('Error loading referrals:', error);
+                showAlert('Error loading referrals. Please try again.', 'error');
             }
-        });
-
+        }
+        
+        // Spin wheel for client
+        async function spinWheel(clientId) {
+            try {
+                const { data: spinLink, error } = await supabase
+                    .from('spin_links')
+                    .insert({
+                        client_id: clientId,
+                        token: crypto.randomUUID()
+                    })
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
+                const spinUrl = `./spin.html?token=${spinLink.token}`;
+                window.open(spinUrl, '_blank');
+            } catch (error) {
+                console.error('Error creating spin link:', error);
+                showAlert('Error creating spin link. Please try again.', 'error');
+            }
+        }
+        
+        // Helper function to escape HTML
+        function escapeHtml(unsafe) {
+            if (typeof unsafe !== 'string') return unsafe;
+            return unsafe
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+        
+        // Show alert message
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+        
         // Initialize when the page loads
-        document.addEventListener('DOMContentLoaded', initialize);
+        document.addEventListener('DOMContentLoaded', () => {
+            initialize();
+        });
     </script>
 </body>
 </html> 

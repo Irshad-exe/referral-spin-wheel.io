@@ -53,11 +53,10 @@ async function isUserAdmin(userId) {
         console.log('Checking admin status for user:', userId);
         const supabaseClient = await getSupabaseClient();
         
-        // First check if the user exists in admin_users table
         const { data: adminData, error: adminError } = await supabaseClient
             .from('admin_users')
             .select('*')
-            .eq('id', userId)
+            .eq('user_id', userId)
             .single();
 
         if (adminError) {
@@ -77,12 +76,8 @@ async function isUserAdmin(userId) {
 async function signIn(email, password) {
     try {
         console.log('Starting sign in process...');
-        
-        // Ensure Supabase is initialized
         const supabaseClient = await getSupabaseClient();
-        console.log('Supabase client ready for sign in');
         
-        // Sign in with Supabase Auth
         const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
             email: email,
             password: password
@@ -94,7 +89,6 @@ async function signIn(email, password) {
         }
 
         console.log('Auth successful, checking admin status...');
-        // Check if user is admin
         const isAdmin = await isUserAdmin(authData.user.id);
         console.log('Admin check result:', isAdmin);
 
@@ -104,7 +98,6 @@ async function signIn(email, password) {
             throw new Error('Access denied. Admin privileges required.');
         }
 
-        // Store the session
         const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
         if (sessionError) {
             console.error('Error getting session:', sessionError);
@@ -305,29 +298,45 @@ window.addEventListener('popstate', async () => {
 
 // Initialize middleware
 export async function initializeMiddleware() {
-    // Add auth check to protected routes
-    const protectedRoutes = [
-        '/dashboard.html',
-        '/admin.html',
-        '/admin-dashboard.html'
-    ];
-
-    // Check if current path is protected
-    const currentPath = window.location.pathname;
-    if (protectedRoutes.includes(currentPath)) {
-        const isAuthenticated = await checkAuth();
-        if (!isAuthenticated) {
-            return false;
+    try {
+        console.log('Initializing middleware...');
+        const { isAuthenticated, isAdmin } = await checkAuth();
+        
+        // Get current path
+        const currentPath = window.location.pathname;
+        console.log('Current path:', currentPath);
+        
+        // Define protected routes
+        const protectedRoutes = [
+            '/dashboard.html',
+            '/admin.html',
+            '/admin-dashboard.html'
+        ];
+        
+        // Check if current path is protected
+        if (protectedRoutes.includes(currentPath)) {
+            console.log('Protected route detected');
+            if (!isAuthenticated || !isAdmin) {
+                console.log('User not authenticated or not admin, redirecting to login');
+                window.location.href = '/login.html';
+                return false;
+            }
         }
+        
+        console.log('Middleware check passed');
+        return true;
+    } catch (error) {
+        console.error('Middleware error:', error);
+        window.location.href = '/login.html';
+        return false;
     }
-
-    return true;
 }
 
 // Sign out function
 export async function signOut() {
     try {
-        const { error } = await supabase.auth.signOut();
+        const supabaseClient = await getSupabaseClient();
+        const { error } = await supabaseClient.auth.signOut();
         if (error) throw error;
         window.location.href = '/login.html';
     } catch (error) {
@@ -336,14 +345,12 @@ export async function signOut() {
     }
 }
 
-// Export all functions and variables at the end
+// Export all functions and variables
 export { 
     getSupabaseClient,
     signIn,
     checkAuth,
     isUserAdmin,
-    authMiddleware,
-    checkSessionStatus,
     supabase,
     initializeMiddleware,
     signOut
