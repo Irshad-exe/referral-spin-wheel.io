@@ -11,7 +11,7 @@ if (!window.supabase) {
         console.log('Supabase script loaded');
         // Load admin auth after Supabase is loaded
         const authScript = document.createElement('script');
-        authScript.src = '/js/admin-auth.js';
+        authScript.src = 'https://irshad-exe.github.io/referral-spin-wheel.io/js/admin-auth.js';
         authScript.type = 'module';
         document.head.appendChild(authScript);
     };
@@ -20,7 +20,7 @@ if (!window.supabase) {
     console.log('Supabase already loaded');
     // Load admin auth if Supabase is already loaded
     const authScript = document.createElement('script');
-    authScript.src = '/js/admin-auth.js';
+    authScript.src = 'https://irshad-exe.github.io/referral-spin-wheel.io/js/admin-auth.js';
     authScript.type = 'module';
     document.head.appendChild(authScript);
 } 
