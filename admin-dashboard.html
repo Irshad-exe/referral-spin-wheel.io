@@ -72,7 +72,7 @@
     </main>
 
     <script type="module">
-        import { supabase, initializeMiddleware } from './js/admin-auth.js';
+        import { supabase, initializeMiddleware, ROUTES, navigateTo } from './js/admin-auth.js';
         
         // Initialize Supabase and middleware
         async function initialize() {
@@ -87,7 +87,7 @@
                 await loadClients();
             } catch (error) {
                 console.error('Initialization error:', error);
-                window.location.href = './login.html';
+                navigateTo(ROUTES.LOGIN);
             }
         }
         

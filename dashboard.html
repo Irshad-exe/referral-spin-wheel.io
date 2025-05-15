@@ -186,7 +186,7 @@
     </main>
 
     <script type="module">
-        import { supabase, initializeMiddleware } from './js/admin-auth.js';
+        import { supabase, initializeMiddleware, ROUTES, navigateTo } from './js/admin-auth.js';
         
         // Initialize Supabase and middleware
         async function initialize() {
@@ -201,7 +201,7 @@
                 await loadClients();
             } catch (error) {
                 console.error('Initialization error:', error);
-                window.location.href = './login.html';
+                navigateTo(ROUTES.LOGIN);
             }
         }
         
@@ -310,7 +310,7 @@
                 
                 if (error) throw error;
                 
-                const spinUrl = `./spin.html?token=${spinLink.token}`;
+                const spinUrl = `${ROUTES.SPIN}?token=${spinLink.token}`;
                 window.open(spinUrl, '_blank');
             } catch (error) {
                 console.error('Error creating spin link:', error);

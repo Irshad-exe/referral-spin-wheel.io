@@ -2,6 +2,44 @@
 const SUPABASE_URL = 'https://nnqxwcmncytolztvvpvi.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ucXh3Y21uY3l0b2x6dHZ2cHZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4MDg0MjMsImV4cCI6MjA2MjM4NDQyM30.2Ad2Wv3YC9DwxOG82JBF21BGvkS6gbIFOpPXLCWkdso';
 
+// Define routes
+const BASE_URL = 'https://irshad-exe.github.io/referral-spin-wheel.io';
+const ROUTES = {
+    HOME: `${BASE_URL}/index.html`,
+    LOGIN: `${BASE_URL}/login.html`,
+    DASHBOARD: `${BASE_URL}/dashboard.html`,
+    ADMIN: `${BASE_URL}/admin.html`,
+    ADMIN_DASHBOARD: `${BASE_URL}/admin-dashboard.html`,
+    VERIFY_TOKEN: `${BASE_URL}/verify-token.html`,
+    SPIN: `${BASE_URL}/spin.html`
+};
+
+// Public pages that don't require authentication
+const PUBLIC_PAGES = [
+    '/index.html',
+    '/login.html',
+    '/verify-token.html',
+    '/spin.html'
+];
+
+// Navigation functions
+function navigateTo(route) {
+    window.location.href = route;
+}
+
+// Redirect URL management
+function setRedirectUrl(url) {
+    localStorage.setItem('redirectUrl', url);
+}
+
+function getRedirectUrl() {
+    return localStorage.getItem('redirectUrl') || ROUTES.DASHBOARD;
+}
+
+function clearRedirectUrl() {
+    localStorage.removeItem('redirectUrl');
+}
+
 // Initialize Supabase client
 let supabase = null;
 
@@ -195,8 +233,6 @@ async function checkSessionStatus() {
     }
 }
 
-import { ROUTES, PUBLIC_PAGES, navigateTo, setRedirectUrl, getRedirectUrl, clearRedirectUrl } from './routes.js';
-
 // Add session check to auth middleware
 async function authMiddleware() {
     console.log('Auth middleware running...'); // Debug log
@@ -318,7 +354,7 @@ export async function initializeMiddleware() {
             console.log('Protected route detected');
             if (!isAuthenticated || !isAdmin) {
                 console.log('User not authenticated or not admin, redirecting to login');
-                window.location.href = '/login.html';
+                navigateTo(ROUTES.LOGIN);
                 return false;
             }
         }
@@ -327,7 +363,7 @@ export async function initializeMiddleware() {
         return true;
     } catch (error) {
         console.error('Middleware error:', error);
-        window.location.href = '/login.html';
+        navigateTo(ROUTES.LOGIN);
         return false;
     }
 }
@@ -338,7 +374,7 @@ export async function signOut() {
         const supabaseClient = await getSupabaseClient();
         const { error } = await supabaseClient.auth.signOut();
         if (error) throw error;
-        window.location.href = '/login.html';
+        navigateTo(ROUTES.LOGIN);
     } catch (error) {
         console.error('Sign out error:', error);
         throw error;
@@ -353,5 +389,11 @@ export {
     isUserAdmin,
     supabase,
     initializeMiddleware,
-    signOut
+    signOut,
+    ROUTES,
+    PUBLIC_PAGES,
+    navigateTo,
+    setRedirectUrl,
+    getRedirectUrl,
+    clearRedirectUrl
 };
