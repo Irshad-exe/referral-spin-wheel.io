@@ -16,24 +16,30 @@ const ROUTES = {
 
 // Public pages that don't require authentication
 const PUBLIC_PAGES = [
-    '/index.html',
-    '/login.html',
-    '/verify-token.html',
-    '/spin.html'
+    '/referral-spin-wheel.io/index.html',
+    '/referral-spin-wheel.io/login.html',
+    '/referral-spin-wheel.io/verify-token.html',
+    '/referral-spin-wheel.io/spin.html'
 ];
 
 // Navigation functions
 function navigateTo(route) {
+    console.log('Navigating to:', route); // Debug log
     window.location.href = route;
 }
 
 // Redirect URL management
 function setRedirectUrl(url) {
-    localStorage.setItem('redirectUrl', url);
+    // Ensure URL includes repository name
+    const fullUrl = url.startsWith('/') ? `${BASE_URL}${url}` : url;
+    console.log('Setting redirect URL:', fullUrl); // Debug log
+    localStorage.setItem('redirectUrl', fullUrl);
 }
 
 function getRedirectUrl() {
-    return localStorage.getItem('redirectUrl') || ROUTES.DASHBOARD;
+    const url = localStorage.getItem('redirectUrl') || ROUTES.DASHBOARD;
+    console.log('Getting redirect URL:', url); // Debug log
+    return url;
 }
 
 function clearRedirectUrl() {
@@ -342,11 +348,11 @@ export async function initializeMiddleware() {
         const currentPath = window.location.pathname;
         console.log('Current path:', currentPath);
         
-        // Define protected routes
+        // Define protected routes with repository name
         const protectedRoutes = [
-            '/dashboard.html',
-            '/admin.html',
-            '/admin-dashboard.html'
+            '/referral-spin-wheel.io/dashboard.html',
+            '/referral-spin-wheel.io/admin.html',
+            '/referral-spin-wheel.io/admin-dashboard.html'
         ];
         
         // Check if current path is protected
