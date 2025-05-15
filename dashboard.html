@@ -3,64 +3,257 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta name="theme-color" content="#1d4ed8">
+    <title>Client Dashboard - LakshInvestment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module" src="/js/admin-auth.js"></script>
+    <style>
+        .main-content {
+            padding: 2rem 0;
+        }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .stat-box {
+            background: var(--bg-primary);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+        
+        .stat-box h3 {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-box p {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 0;
+        }
+        
+        .table-container {
+            background: var(--bg-primary);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-top: 2rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background-color: var(--bg-secondary);
+            font-weight: 600;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+        
+        .status-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-eligible {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .spin-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .spin-button:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .spin-button:disabled {
+            background-color: var(--bg-secondary);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .view-referrals {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+        
+        .view-referrals:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            table {
+                min-width: 600px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Client Ladoo Dashboard</h1>
+    <!-- Include Navigation -->
+    <div id="navbar"></div>
+
+    <main class="main-content">
+        <div class="container">
+            <h1>Client Ladoo Dashboard</h1>
+            
+            <div class="stats-container">
+                <div class="stat-box">
+                    <h3>Total Clients</h3>
+                    <p id="total-clients">0</p>
+                </div>
+                <div class="stat-box">
+                    <h3>Clients with 3+ Ladoos</h3>
+                    <p id="eligible-clients">0</p>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="clients-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Contact</th>
+                            <th>Ladoo Count</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                            <th>Spin Wheel</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Client rows will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Load Auth Scripts -->
+    <script src="/js/auth-loader.js"></script>
+    
+    <script type="module">
+        import { supabase } from '/js/admin-auth.js';
         
-        <div class="stats-container">
-            <div class="stat-box">
-                <h3>Total Clients</h3>
-                <p id="total-clients">0</p>
-            </div>
-            <div class="stat-box">
-                <h3>Clients with 3+ Ladoos</h3>
-                <p id="eligible-clients">0</p>
-            </div>
-        </div>
+        // Initialize Supabase client
+        const SUPABASE_URL = 'https://nnqxwcmncytolztvvpvi.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ucXh3Y21uY3l0b2x6dHZ2cHZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4MDg0MjMsImV4cCI6MjA2MjM4NDQyM30.2Ad2Wv3YC9DwxOG82JBF21BGvkS6gbIFOpPXLCWkdso';
+        
+        // Wait for Supabase to be loaded
+        async function waitForSupabase() {
+            return new Promise((resolve) => {
+                if (window.supabase) {
+                    resolve();
+                } else {
+                    const checkSupabase = setInterval(() => {
+                        if (window.supabase) {
+                            clearInterval(checkSupabase);
+                            resolve();
+                        }
+                    }, 100);
+                }
+            });
+        }
 
-        <div class="table-container">
-            <table id="clients-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Contact</th>
-                        <th>Ladoo Count</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                        <th>Spin Wheel</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Client rows will be inserted here -->
-                </tbody>
-            </table>
-        </div>
-    </div>
+        // Initialize Supabase client
+        async function initializeSupabase() {
+            await waitForSupabase();
+            console.log('Supabase loaded, initializing client...');
+            const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                auth: {
+                    autoRefreshToken: true,
+                    persistSession: true,
+                    detectSessionInUrl: true
+                }
+            });
+            console.log('Supabase client initialized');
+            return supabaseClient;
+        }
 
-    <script src="js/config.js"></script>
-    <script>
-        // Load clients on page load
-        document.addEventListener('DOMContentLoaded', async () => {
-            await loadClients();
-        });
-
-        async function loadClients() {
-            const { data: clients, error } = await supabase
-                .from('clients')
-                .select('*')
-                .order('ladoo_count', { ascending: false });
-
-            if (error) {
-                console.error('Error loading clients:', error);
-                return;
+        // Initialize Supabase and load data
+        let supabaseClient;
+        async function initialize() {
+            try {
+                supabaseClient = await initializeSupabase();
+                await loadClients();
+            } catch (error) {
+                console.error('Initialization error:', error);
             }
+        }
 
-            updateStats(clients);
-            updateTable(clients);
+        // Load clients data
+        async function loadClients() {
+            try {
+                const { data: clients, error } = await supabaseClient
+                    .from('clients')
+                    .select('*')
+                    .order('ladoo_count', { ascending: false });
+
+                if (error) {
+                    console.error('Error loading clients:', error);
+                    return;
+                }
+
+                updateStats(clients);
+                updateTable(clients);
+            } catch (error) {
+                console.error('Error in loadClients:', error);
+            }
         }
 
         function updateStats(clients) {
@@ -107,7 +300,7 @@
         }
 
         async function viewReferrals(clientId) {
-            const { data: referrals, error } = await supabase
+            const { data: referrals, error } = await supabaseClient
                 .from('referrals')
                 .select(`
                     *,
@@ -150,8 +343,9 @@
 
             document.body.appendChild(modal);
         }
+
         async function spinWheel(clientId) {
-            const { data: client, error } = await supabase
+            const { data: client, error } = await supabaseClient
                 .from('clients')
                 .select('*')
                 .eq('id', clientId)
@@ -173,7 +367,7 @@
             const countWon = parseInt(prize) || 0;
 
             // Create a new spin link record
-            const { error: insertError } = await supabase
+            const { error: insertError } = await supabaseClient
                 .from('spin_links')
                 .insert([
                     {
@@ -190,7 +384,7 @@
             }
 
             // Update client's ladoo count
-            const { error: updateError } = await supabase
+            const { error: updateError } = await supabaseClient
                 .from('clients')
                 .update({ ladoo_count: client.ladoo_count + countWon })
                 .eq('id', clientId);
@@ -205,24 +399,67 @@
             alert(`Congratulations! You won ${countWon} Ladoos!`);
         }
 
-        // Add styles for spin button
-        document.head.innerHTML += `
-            <style>
-                .spin-button {
-                    background-color: #4CAF50;
-                    color: white;
-                    border: none;
-                    padding: 8px 16px;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-size: 14px;
+        // Load navigation
+        fetch('components/navbar.html')
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('navbar').innerHTML = html;
+                
+                // Initialize mobile menu
+                const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+                const navLinks = document.getElementById('navLinks');
+                const dropdownToggles = document.querySelectorAll('.nav-dropdown-toggle');
+                
+                if (mobileMenuBtn && navLinks) {
+                    mobileMenuBtn.addEventListener('click', function() {
+                        this.classList.toggle('active');
+                        navLinks.classList.toggle('active');
+                        document.body.classList.toggle('menu-open');
+                    });
                 }
-                .spin-button:hover {
-                    background-color: #45a049;
-                }
-            </style>
-        `;
+                
+                // Dropdown toggle for mobile
+                dropdownToggles.forEach(toggle => {
+                    toggle.addEventListener('click', function(e) {
+                        if (window.innerWidth <= 768) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const dropdown = this.closest('.nav-dropdown');
+                            dropdown.classList.toggle('active');
+                        }
+                    });
+                });
+                
+                // Close dropdowns when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (window.innerWidth > 768) return;
+                    
+                    const isClickInsideNav = navLinks && navLinks.contains(e.target);
+                    const isClickOnMenuBtn = mobileMenuBtn && mobileMenuBtn.contains(e.target);
+                    
+                    if (!isClickInsideNav && !isClickOnMenuBtn) {
+                        if (mobileMenuBtn) mobileMenuBtn.classList.remove('active');
+                        if (navLinks) navLinks.classList.remove('active');
+                        document.body.classList.remove('menu-open');
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error loading navigation:', error);
+            });
+        
+        // Close dropdown when resizing to desktop
+        window.addEventListener('resize', function() {
+            const dropdowns = document.querySelectorAll('.nav-dropdown');
+            if (window.innerWidth > 768) {
+                dropdowns.forEach(dropdown => {
+                    dropdown.classList.remove('active');
+                });
+            }
+        });
 
+        // Initialize when the page loads
+        document.addEventListener('DOMContentLoaded', initialize);
     </script>
 </body>
 </html> 

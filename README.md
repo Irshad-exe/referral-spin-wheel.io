@@ -1,90 +1,61 @@
-# Ladoo Referral System
+# LakshInvestment Admin Dashboard
 
-A free, no-login referral spin-wheel reward system for advisory firms. Built with Supabase and static hosting.
+A modern admin dashboard for managing clients and referrals.
 
 ## Features
 
-- One-time use spin wheel for referrals
-- Admin dashboard to track client ladoo counts
-- WhatsApp integration for sharing spin links
-- Automatic notification when clients reach 3 ladoos
-- No user login required - security via single-use tokens
+- Client management
+- Referral tracking
+- Admin authentication
+- Responsive design
 
-## Setup Instructions
+## Tech Stack
 
-### 1. Supabase Setup
+- HTML5
+- CSS3
+- JavaScript (ES6+)
+- Supabase (Backend as a Service)
 
-1. Create a new project on [Supabase](https://supabase.com)
-2. Run the SQL commands from `schema.sql` in the Supabase SQL editor
-3. Get your project URL and anon key from Project Settings > API
-4. Update `js/config.js` with your Supabase credentials:
-   ```javascript
-   const SUPABASE_URL = 'your-project-url';
-   const SUPABASE_ANON_KEY = 'your-anon-key';
-   ```
+## Setup
 
-### 2. Local Development
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/lakshinvestment-admin.git
+cd lakshinvestment-admin
+```
 
-1. Clone this repository
-2. Open the files in a local web server (e.g., using VS Code's Live Server extension)
-3. Test the functionality locally
+2. Open `index.html` in your browser or use a local server:
+```bash
+# Using Python
+python -m http.server 8000
 
-### 3. Deployment
+# Using Node.js
+npx serve
+```
 
-#### Option 1: Netlify
+3. Visit `http://localhost:8000` in your browser
 
-1. Create a new site on [Netlify](https://netlify.com)
-2. Connect your GitHub repository
-3. Deploy settings:
-   - Build command: (leave empty)
-   - Publish directory: `.` (root directory)
+## Environment Variables
 
-#### Option 2: GitHub Pages
+Create a `.env` file in the root directory with your Supabase credentials:
 
-1. Push your code to a GitHub repository
-2. Go to repository Settings > Pages
-3. Select your main branch as the source
-4. Your site will be available at `https://yourusername.github.io/repository-name`
+```env
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-## Usage
+## Deployment
 
-### Admin Workflow
+The frontend is hosted on GitHub Pages. The backend is powered by Supabase.
 
-1. Access `admin.html` to add new referrals
-2. Select the referring client and enter new client details
-3. Generate a spin link
-4. Share the link via WhatsApp or copy to clipboard
+## Contributing
 
-### Client Experience
-
-1. Client receives spin link via WhatsApp
-2. Clicks link to access `spin.html`
-3. Spins the wheel once to win ladoos
-4. System automatically tracks ladoo count
-
-### Monitoring
-
-1. Access `dashboard.html` to view all clients
-2. Monitor ladoo counts and eligible clients
-3. View detailed referral history for each client
-
-## Security
-
-- Each spin link is single-use
-- No user authentication required
-- Row Level Security (RLS) policies protect data
-- Tokens are UUID-based and unique
-
-## Customization
-
-- Modify prize weights in `js/config.js`
-- Update colors and styles in `css/styles.css`
-- Add additional features through Supabase Edge Functions
-
-## Support
-
-For issues or questions, please open a GitHub issue in this repository.
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## License
 
-MIT License - feel free to use and modify for your needs. 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 

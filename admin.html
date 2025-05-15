@@ -3,63 +3,305 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Add Referral</title>
+    <meta name="theme-color" content="#1d4ed8">
+    <title>Add Referral - LakshInvestment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="/referral-spin-wheel.io/css/styles.css">
+    <style>
+        .main-content {
+            padding: 2rem 0;
+        }
+        
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--bg-primary);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+        }
+        
+        button[type="submit"] {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            width: 100%;
+            margin-top: 1rem;
+        }
+        
+        button[type="submit"]:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        #result-container {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background-color: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: var(--border-radius);
+            display: none;
+        }
+        
+        #result-container.visible {
+            display: block;
+        }
+        
+        .link-container {
+            display: flex;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+        
+        #spin-link {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background-color: white;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        #copy-link,
+        #whatsapp-share {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: var(--transition);
+        }
+        
+        #copy-link {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        
+        #copy-link:hover {
+            background-color: #e5e7eb;
+        }
+        
+        #whatsapp-share {
+            background-color: #25D366;
+            color: white;
+            margin-top: 0.5rem;
+        }
+        
+        #whatsapp-share:hover {
+            background-color: #128C7E;
+            transform: translateY(-1px);
+        }
+        
+        .whatsapp-container {
+            margin-top: 1rem;
+        }
+        
+        #error-container {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: var(--border-radius);
+            color: #b91c1c;
+            display: none;
+        }
+        
+        #error-container.visible {
+            display: block;
+        }
+        
+        @media (min-width: 640px) {
+            .link-container {
+                margin: 1.5rem 0;
+            }
+            
+            button[type="submit"] {
+                width: auto;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Add New Referral</h1>
-        <form id="referral-form">
-            <div class="form-group">
-                <label for="client-select">Select Referring Client:</label>
-                <select id="client-select" required>
-                    <option value="">Select a client...</option>
-                </select>
-            </div>
+    <!-- Include Navigation -->
+    <div id="navbar"></div>
 
-            <div class="form-group">
-                <label for="referee-name">New Client Name:</label>
-                <input type="text" id="referee-name" required>
-            </div>
+    <main class="main-content">
+        <div class="container">
+            <div class="form-container">
+                <h1>Add New Referral</h1>
+                <form id="referral-form">
+                    <div class="form-group">
+                        <label for="client-select">Select Referring Client:</label>
+                        <select id="client-select" required>
+                            <option value="">Select a client...</option>
+                        </select>
+                    </div>
 
-            <div class="form-group">
-                <label for="referee-contact">New Client Contact:</label>
-                <input type="text" id="referee-contact" required>
-            </div>
+                    <div class="form-group">
+                        <label for="referee-name">New Client Name:</label>
+                        <input type="text" id="referee-name" required>
+                    </div>
 
-            <button type="submit">Generate Spin Link</button>
-        </form>
+                    <div class="form-group">
+                        <label for="referee-contact">New Client Contact:</label>
+                        <input type="text" id="referee-contact" required>
+                    </div>
 
-        <div id="result-container" class="hidden">
-            <h2>Spin Link Generated!</h2>
-            <div class="link-container">
-                <input type="text" id="spin-link" readonly>
-                <button id="copy-link">Copy</button>
-            </div>
-            <div class="whatsapp-container">
-                <button id="whatsapp-share">Share on WhatsApp</button>
+                    <button type="submit">
+                        <i class="fas fa-link"></i> Generate Spin Link
+                    </button>
+                </form>
+
+                <div id="result-container">
+                    <h2><i class="fas fa-check-circle" style="color: #10b981;"></i> Spin Link Generated!</h2>
+                    <div class="link-container">
+                        <input type="text" id="spin-link" readonly>
+                        <button id="copy-link">
+                            <i class="far fa-copy"></i> Copy
+                        </button>
+                    </div>
+                    <div class="whatsapp-container">
+                        <button id="whatsapp-share">
+                            <i class="fab fa-whatsapp"></i> Share on WhatsApp
+                        </button>
+                    </div>
+                </div>
+
+                <div id="error-container">
+                    <p id="error-message" class="error-text"></p>
+                </div>
             </div>
         </div>
+    </main>
 
-        <div id="error-container" class="hidden">
-            <p id="error-message" class="error-text"></p>
-        </div>
-    </div>
-
-    <script src="/referral-spin-wheel.io/js/config.js"></script>
-    <script>
-        let clients = [];
-
-        // Load clients on page load
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                await loadClients();
-                setupFormHandlers();
-            } catch (error) {
-                showError('Error loading clients: ' + error.message);
-            }
+    <script type="module">
+          import { supabase } from '/js/admin-auth.js';
+        // Load navigation and initialize form
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load navbar
+            fetch('components/navbar.html')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('navbar').innerHTML = html;
+                    // Initialize mobile menu functionality
+                    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+                    const navLinks = document.getElementById('navLinks');
+                    const dropdownToggles = document.querySelectorAll('.nav-dropdown-toggle');
+                    
+                    if (mobileMenuBtn) {
+                        mobileMenuBtn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            this.classList.toggle('active');
+                            if (navLinks) navLinks.classList.toggle('active');
+                            document.body.classList.toggle('menu-open');
+                        });
+                    }
+                    
+                    // Close mobile menu when clicking on a nav link
+                    document.querySelectorAll('.nav-link:not(.nav-dropdown-toggle)').forEach(link => {
+                        link.addEventListener('click', () => {
+                            if (window.innerWidth <= 768) {
+                                if (mobileMenuBtn) mobileMenuBtn.classList.remove('active');
+                                if (navLinks) navLinks.classList.remove('active');
+                                document.body.classList.remove('menu-open');
+                            }
+                        });
+                    });
+                    
+                    // Dropdown toggle for mobile
+                    dropdownToggles.forEach(toggle => {
+                        toggle.addEventListener('click', function(e) {
+                            if (window.innerWidth <= 768) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const dropdown = this.closest('.nav-dropdown');
+                                dropdown.classList.toggle('active');
+                            }
+                        });
+                    });
+                    
+                    // Close dropdowns when clicking outside
+                    document.addEventListener('click', function(e) {
+                        if (window.innerWidth > 768) return;
+                        
+                        const isClickInsideNav = navLinks && navLinks.contains(e.target);
+                        const isClickOnMenuBtn = mobileMenuBtn && mobileMenuBtn.contains(e.target);
+                        
+                        if (!isClickInsideNav && !isClickOnMenuBtn) {
+                            if (mobileMenuBtn) mobileMenuBtn.classList.remove('active');
+                            if (navLinks) navLinks.classList.remove('active');
+                            document.body.classList.remove('menu-open');
+                        }
+                    });
+                    
+                    // Initialize form functionality
+                    if (typeof loadClients === 'function') {
+                        loadClients();
+                    }
+                    if (typeof setupFormHandlers === 'function') {
+                        setupFormHandlers();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading navigation:', error);
+                });
+            
+            // Close dropdown when resizing to desktop
+            window.addEventListener('resize', function() {
+                const dropdowns = document.querySelectorAll('.nav-dropdown');
+                if (window.innerWidth > 768) {
+                    dropdowns.forEach(dropdown => {
+                        dropdown.classList.remove('active');
+                    });
+                }
+            });
         });
+        
+        // Load config
+        document.write('<script src="js/config.js"><\/script>');
+        let clients = [];
 
         async function loadClients() {
             const { data, error } = await supabase
@@ -148,7 +390,7 @@
                 const baseUrl = 'https://irshad-exe.github.io/referral-spin-wheel.io';
                 const spinUrl = `${baseUrl}/spin.html?token=${spinLink.token}`;
                 document.getElementById('spin-link').value = spinUrl;
-                document.getElementById('result-container').classList.remove('hidden');
+                document.getElementById('result-container').classList.add('visible');
 
                 // Create WhatsApp sharing link with proper message
                 const whatsappMessage = `Spin the wheel to win ladoos! Click here: ${spinUrl}`;
@@ -179,12 +421,12 @@
             const errorContainer = document.getElementById('error-container');
             const errorMessage = document.getElementById('error-message');
             errorMessage.textContent = message;
-            errorContainer.classList.remove('hidden');
+            errorContainer.classList.add('visible');
         }
 
         function hideError() {
             const errorContainer = document.getElementById('error-container');
-            errorContainer.classList.add('hidden');
+            errorContainer.classList.remove('visible');
         }
     </script>
 </body>

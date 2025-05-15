@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1d4ed8">
+    <title>Admin Dashboard - LakshInvestment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/auth-loader.js"></script>
+</head>
+<body>
+    <!-- Include Navigation -->
+    <div id="navbar"></div>
+
+    <main class="dashboard">
+        <div class="container">
+            <div class="dashboard-header">
+                <h1>Client Management</h1>
+                <div class="search-container">
+                    <input type="text" id="search-input" class="search-input" placeholder="Search by name or UCC..." autocomplete="off">
+                    <button id="search-button" class="search-button">
+                        <i class="fas fa-search"></i>
+                        Search
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <div id="loading" class="loading">
+                    <div class="loading-spinner"></div>
+                    <span>Loading clients...</span>
+                </div>
+
+                <table id="clients-table" class="data-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>UCC</th>
+                            <th>Contact</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clients-tbody">
+                        <!-- Client data will be inserted here by JavaScript -->
+                    </tbody>
+                </table>
+
+                <div id="no-results" class="no-results" style="display: none;">
+                    <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                    <p>No clients found matching your search criteria.</p>
+                </div>
+            </div>
+
+            <div class="pagination" id="pagination" style="display: none;">
+                <button id="prev-page" class="pagination-button" disabled>
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <!-- Page numbers will be inserted here by JavaScript -->
+                <button id="next-page" class="pagination-button">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { getSupabaseClient } from '/js/admin-auth.js';
+        
+        // Initialize Supabase client and load data
+        async function initialize() {
+            try {
+                console.log('Initializing dashboard...');
+                const supabase = await getSupabaseClient();
+                console.log('Supabase client initialized:', supabase);
+                
+                // Load navbar
+                console.log('Loading navbar...');
+                const navbarResponse = await fetch('components/navbar.html');
+                const navbarHtml = await navbarResponse.text();
+                document.getElementById('navbar').innerHTML = navbarHtml;
+                
+                // Initialize mobile menu functionality
+                console.log('Initializing mobile menu...');
+                initializeMobileMenu();
+                
+                // Load clients
+                console.log('Loading clients...');
+                await loadClients(supabase);
+                
+                console.log('Dashboard initialization complete');
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showAlert('Error initializing dashboard. Please refresh the page.', 'error');
+            }
+        }
+        
+        // Load clients from Supabase
+        async function loadClients(supabase) {
+            try {
+                console.log('Starting to load clients...');
+                showLoading(true);
+                
+                // First, let's check if we can access the table
+                console.log('Checking table access...');
+                const { count, error: countError } = await supabase
+                    .from('clients')
+                    .select('*', { count: 'exact', head: true });
+                    
+                console.log('Table access check:', { count, error: countError });
+                
+                if (countError) {
+                    console.error('Error accessing clients table:', countError);
+                    throw countError;
+                }
+                
+                console.log(`Found ${count} clients in the table`);
+                
+                // Now fetch the actual data
+                const { data: clients, error } = await supabase
+                    .from('clients')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                console.log('Supabase response:', { 
+                    clientsCount: clients?.length,
+                    firstClient: clients?.[0],
+                    error 
+                });
+                
+                if (error) {
+                    console.error('Supabase error:', error);
+                    throw error;
+                }
+                
+                const clientsTbody = document.getElementById('clients-tbody');
+                if (!clientsTbody) {
+                    console.error('Clients table body element not found');
+                    throw new Error('Clients table body element not found');
+                }
+                
+                console.log('Found clients table body, clearing content...');
+                clientsTbody.innerHTML = '';
+                
+                if (clients && clients.length > 0) {
+                    console.log(`Found ${clients.length} clients, rendering...`);
+                    clients.forEach((client, index) => {
+                        console.log(`Rendering client ${index + 1}:`, client);
+                        const row = document.createElement('tr');
+                        
+                        // Format created_at date
+                        const createdAt = client.created_at ? new Date(client.created_at).toLocaleDateString() : 'N/A';
+                        
+                        // Determine status badge
+                        let statusClass = 'status-inactive';
+                        let statusText = 'Inactive';
+                        
+                        if (client.status === 'active') {
+                            statusClass = 'status-active';
+                            statusText = 'Active';
+                        } else if (client.status === 'pending') {
+                            statusClass = 'status-pending';
+                            statusText = 'Pending';
+                        }
+                        
+                        row.innerHTML = `
+                            <td data-label="Name">${escapeHtml(client.name || 'N/A')}</td>
+                            <td data-label="Email">${escapeHtml(client.email || 'N/A')}</td>
+                            <td data-label="UCC">${escapeHtml(client.ucc || 'N/A')}</td>
+                            <td data-label="Contact">${escapeHtml(client.contact_info || 'N/A')}</td>
+                            <td data-label="Status"><span class="status-badge ${statusClass}">${statusText}</span></td>
+                            <td data-label="Actions">
+                                <button class="button btn-outline-primary btn-sm" onclick="viewClient(${client.id})">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                            </td>
+                        `;
+                        
+                        clientsTbody.appendChild(row);
+                    });
+                    
+                    console.log('Showing clients table...');
+                    document.getElementById('clients-table').style.display = 'table';
+                    document.getElementById('no-results').style.display = 'none';
+                } else {
+                    console.log('No clients found in response, showing no results message...');
+                    document.getElementById('clients-table').style.display = 'none';
+                    document.getElementById('no-results').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading clients:', error);
+                showAlert('Error loading clients. Please try again.', 'error');
+            } finally {
+                console.log('Finished loading clients, hiding loading state...');
+                showLoading(false);
+            }
+        }
+        
+        // Helper function to escape HTML
+        function escapeHtml(unsafe) {
+            if (typeof unsafe !== 'string') return unsafe;
+            return unsafe
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+        
+        // Toggle loading state
+        function showLoading(show) {
+            const loadingElement = document.getElementById('loading');
+            const clientsTable = document.getElementById('clients-table');
+            const paginationElement = document.getElementById('pagination');
+            
+            if (loadingElement) loadingElement.style.display = show ? 'flex' : 'none';
+            if (clientsTable) clientsTable.style.display = show ? 'none' : 'table';
+            if (paginationElement) paginationElement.style.display = show ? 'none' : 'flex';
+        }
+        
+        // Initialize mobile menu functionality
+        function initializeMobileMenu() {
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const navLinksEl = document.getElementById('navLinks');
+            const dropdownToggles = document.querySelectorAll('.nav-dropdown-toggle');
+            
+            if (mobileMenuBtn) {
+                mobileMenuBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    this.classList.toggle('active');
+                    if (navLinksEl) navLinksEl.classList.toggle('active');
+                    document.body.classList.toggle('menu-open');
+                });
+            }
+            
+            // Close mobile menu when clicking on a nav link
+            document.querySelectorAll('.nav-link:not(.nav-dropdown-toggle)').forEach(link => {
+                link.addEventListener('click', () => {
+                    if (window.innerWidth <= 768) {
+                        if (mobileMenuBtn) mobileMenuBtn.classList.remove('active');
+                        if (navLinksEl) navLinksEl.classList.remove('active');
+                        document.body.classList.remove('menu-open');
+                    }
+                });
+            });
+            
+            // Dropdown toggle for mobile
+            dropdownToggles.forEach(toggle => {
+                toggle.addEventListener('click', function(e) {
+                    if (window.innerWidth <= 768) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const dropdown = this.closest('.nav-dropdown');
+                        dropdown.classList.toggle('active');
+                    }
+                });
+            });
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(e) {
+                if (window.innerWidth > 768) return;
+                
+                const isClickInsideNav = navLinksEl && navLinksEl.contains(e.target);
+                const isClickOnMenuBtn = mobileMenuBtn && mobileMenuBtn.contains(e.target);
+                
+                if (!isClickInsideNav && !isClickOnMenuBtn) {
+                    if (mobileMenuBtn) mobileMenuBtn.classList.remove('active');
+                    if (navLinksEl) navLinksEl.classList.remove('active');
+                    document.body.classList.remove('menu-open');
+                }
+            });
+        }
+        
+        // Show alert message
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+        
+        // Initialize when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM Content Loaded, starting initialization...');
+            initialize();
+        });
+    </script>
+</body>
+</html>

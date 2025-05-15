@@ -1,0 +1,92 @@
+<!-- Navigation -->
+<nav class="navbar">
+    <div class="container">
+        <a href="/" class="company-name">
+            <span>LakshInvestment</span>
+        </a>
+        
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        
+        <div class="nav-links" id="navLinks">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/dashboard.html" class="nav-link">Dashboard</a>
+            <div class="nav-dropdown">
+                <button class="nav-link nav-dropdown-toggle">
+                    Admin
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </button>
+                <div class="nav-dropdown-menu">
+                    <a href="/admin.html" class="nav-dropdown-item">Add Referral</a>
+                    <a href="/admin-dashboard.html" class="nav-dropdown-item">Client Management</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mobile menu toggle
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const navLinks = document.getElementById('navLinks');
+    const dropdownToggles = document.querySelectorAll('.nav-dropdown-toggle');
+
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            this.classList.toggle('active');
+            navLinks.classList.toggle('active');
+            document.body.classList.toggle('menu-open');
+        });
+    }
+
+    // Dropdown toggle for mobile
+    dropdownToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            if (window.innerWidth <= 768) {
+                e.preventDefault();
+                e.stopPropagation();
+                const dropdown = this.closest('.nav-dropdown');
+                dropdown.classList.toggle('active');
+            }
+        });
+    });
+
+    // Close mobile menu when clicking on a nav link
+    document.querySelectorAll('.nav-link:not(.nav-dropdown-toggle)').forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                if (mobileMenuBtn) mobileMenuBtn.classList.remove('active');
+                if (navLinks) navLinks.classList.remove('active');
+                document.body.classList.remove('menu-open');
+            }
+        });
+    });
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        if (window.innerWidth > 768) return;
+        const isClickInsideNav = navLinks.contains(e.target);
+        const isClickOnMenuBtn = mobileMenuBtn && mobileMenuBtn.contains(e.target);
+        if (!isClickInsideNav && !isClickOnMenuBtn) {
+            if (mobileMenuBtn) mobileMenuBtn.classList.remove('active');
+            if (navLinks) navLinks.classList.remove('active');
+            document.body.classList.remove('menu-open');
+        }
+    });
+
+    // Close dropdown when resizing to desktop
+    window.addEventListener('resize', function() {
+        const dropdowns = document.querySelectorAll('.nav-dropdown');
+        if (window.innerWidth > 768) {
+            dropdowns.forEach(dropdown => {
+                dropdown.classList.remove('active');
+            });
+        }
+    });
+});
+</script>

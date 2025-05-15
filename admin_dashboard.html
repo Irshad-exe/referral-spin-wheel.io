@@ -3,39 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <meta name="theme-color" content="#1d4ed8">
+    <title>Admin Dashboard - LakshInvestment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* Add your CSS styles here */
-        table {
+        .main-content {
+            padding: 2rem 0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        .data-table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 1.5rem;
+            background: var(--bg-primary);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
         }
-        th, td {
-            padding: 8px;
+        
+        .data-table th,
+        .data-table td {
+            padding: 1rem 1.25rem;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .data-table th {
+            background-color: var(--bg-secondary);
+            font-weight: 600;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        
+        .search-container {
+            margin: 1.5rem 0;
+            max-width: 600px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <h1>Admin Dashboard</h1>
-    <input type="text" id="search" placeholder="Search by Name or UCC">
-    <table id="data-table">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Contact Info</th>
-                <th>Ladoo Count</th>
-                <th>Email</th>
-                <th>UCC</th>
-                <th>Created At</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Data will be populated here -->
-        </tbody>
-    </table>
+    <!-- Include Navigation -->
+    <div id="navbar"></div>
+
+    <main class="main-content">
+        <div class="container">
+            <h1>Client Management</h1>
+            
+            <div class="search-container">
+                <input type="text" id="search" class="search-input" placeholder="Search by name or UCC...">
+            </div>
+            
+            <div class="table-responsive">
+                <table id="data-table" class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Contact Info</th>
+                            <th>Ladoo Count</th>
+                            <th>Email</th>
+                            <th>UCC</th>
+                            <th>Created At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Load navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load navbar
+            fetch('components/navbar.html')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('navbar').innerHTML = html;
+                    // Initialize mobile menu functionality
+                    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+                    const navLinks = document.getElementById('navLinks');
+                    const dropdownToggles = document.querySelectorAll('.nav-dropdown-toggle');
+                    
+                    if (mobileMenuBtn) {
+                        mobileMenuBtn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            this.classList.toggle('active');
+                            if (navLinks) navLinks.classList.toggle('active');
+                            document.body.classList.toggle('menu-open');
+                        });
+                    }
+                    
+                    // Close mobile menu when clicking on a nav link
+                    document.querySelectorAll('.nav-link:not(.nav-dropdown-toggle)').forEach(link => {
+                        link.addEventListener('click', () => {
+                            if (window.innerWidth <= 768) {
+                                if (mobileMenuBtn) mobileMenuBtn.classList.remove('active');
+                                if (navLinks) navLinks.classList.remove('active');
+                                document.body.classList.remove('menu-open');
+                            }
+                        });
+                    });
+                    
+                    // Dropdown toggle for mobile
+                    dropdownToggles.forEach(toggle => {
+                        toggle.addEventListener('click', function(e) {
+                            if (window.innerWidth <= 768) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const dropdown = this.closest('.nav-dropdown');
+                                dropdown.classList.toggle('active');
+                            }
+                        });
+                    });
+                    
+                    // Close dropdowns when clicking outside
+                    document.addEventListener('click', function(e) {
+                        if (window.innerWidth > 768) return;
+                        
+                        const isClickInsideNav = navLinks && navLinks.contains(e.target);
+                        const isClickOnMenuBtn = mobileMenuBtn && mobileMenuBtn.contains(e.target);
+                        
+                        if (!isClickInsideNav && !isClickOnMenuBtn) {
+                            if (mobileMenuBtn) mobileMenuBtn.classList.remove('active');
+                            if (navLinks) navLinks.classList.remove('active');
+                            document.body.classList.remove('menu-open');
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading navigation:', error);
+                });
+            
+            // Close dropdown when resizing to desktop
+            window.addEventListener('resize', function() {
+                const dropdowns = document.querySelectorAll('.nav-dropdown');
+                if (window.innerWidth > 768) {
+                    dropdowns.forEach(dropdown => {
+                        dropdown.classList.remove('active');
+                    });
+                }
+            });
+            
+            // Initialize admin dashboard functionality
+            if (typeof initAdminDashboard === 'function') {
+                initAdminDashboard();
+            }
+        });
+    </script>
+    
     <script src="js/admin.js"></script>
 </body>
 </html>
