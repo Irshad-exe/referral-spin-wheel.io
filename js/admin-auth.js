@@ -6,51 +6,34 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 let supabase = null;
 
 // Function to wait for Supabase to be loaded
-function waitForSupabase() {
-    return new Promise((resolve, reject) => {
+async function waitForSupabase() {
+    return new Promise((resolve) => {
         if (window.supabase) {
-            resolve(window.supabase);
+            resolve();
         } else {
-            const checkInterval = setInterval(() => {
+            const checkSupabase = setInterval(() => {
                 if (window.supabase) {
-                    clearInterval(checkInterval);
-                    resolve(window.supabase);
+                    clearInterval(checkSupabase);
+                    resolve();
                 }
             }, 100);
-            
-            // Timeout after 5 seconds
-            setTimeout(() => {
-                clearInterval(checkInterval);
-                reject(new Error('Supabase failed to load'));
-            }, 5000);
         }
     });
 }
 
 // Initialize Supabase client
 async function initializeSupabase() {
-    try {
-        console.log('Waiting for Supabase to be available...');
-        const supabaseModule = await waitForSupabase();
-        console.log('Supabase module loaded:', supabaseModule);
-        
-        console.log('Initializing Supabase client with URL:', SUPABASE_URL);
-        console.log('Using API key:', SUPABASE_ANON_KEY.substring(0, 10) + '...');
-        
-        supabase = supabaseModule.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            auth: {
-                autoRefreshToken: true,
-                persistSession: true,
-                detectSessionInUrl: true
-            }
-        });
-        
-        console.log('Supabase client initialized successfully');
-        return supabase;
-    } catch (error) {
-        console.error('Error initializing Supabase:', error);
-        throw error;
-    }
+    await waitForSupabase();
+    console.log('Supabase loaded, initializing client...');
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: {
+            autoRefreshToken: true,
+            persistSession: true,
+            detectSessionInUrl: true
+        }
+    });
+    console.log('Supabase client initialized');
+    return supabase;
 }
 
 // Function to get the initialized client
@@ -320,6 +303,39 @@ window.addEventListener('popstate', async () => {
     }
 });
 
+// Initialize middleware
+export async function initializeMiddleware() {
+    // Add auth check to protected routes
+    const protectedRoutes = [
+        '/dashboard.html',
+        '/admin.html',
+        '/admin-dashboard.html'
+    ];
+
+    // Check if current path is protected
+    const currentPath = window.location.pathname;
+    if (protectedRoutes.includes(currentPath)) {
+        const isAuthenticated = await checkAuth();
+        if (!isAuthenticated) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// Sign out function
+export async function signOut() {
+    try {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        window.location.href = '/login.html';
+    } catch (error) {
+        console.error('Sign out error:', error);
+        throw error;
+    }
+}
+
 // Export all functions and variables at the end
 export { 
     getSupabaseClient,
@@ -328,5 +344,7 @@ export {
     isUserAdmin,
     authMiddleware,
     checkSessionStatus,
-    supabase
+    supabase,
+    initializeMiddleware,
+    signOut
 };

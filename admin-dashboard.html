@@ -10,8 +10,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/auth-loader.js"></script>
+    <script type="module" src="js/admin-auth.js"></script>
 </head>
 <body>
     <!-- Include Navigation -->
@@ -71,38 +72,58 @@
     </main>
 
     <script type="module">
-        import { getSupabaseClient } from '/js/admin-auth.js';
+        import { supabase } from './js/admin-auth.js';
+        import { ROUTES, navigateTo } from './js/routes.js';
         
-        // Initialize Supabase client and load data
+        // Initialize Supabase client
+        const SUPABASE_URL = 'https://nnqxwcmncytolztvvpvi.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ucXh3Y21uY3l0b2x6dHZ2cHZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4MDg0MjMsImV4cCI6MjA2MjM4NDQyM30.2Ad2Wv3YC9DwxOG82JBF21BGvkS6gbIFOpPXLCWkdso';
+        
+        // Wait for Supabase to be loaded
+        async function waitForSupabase() {
+            return new Promise((resolve) => {
+                if (window.supabase) {
+                    resolve();
+                } else {
+                    const checkSupabase = setInterval(() => {
+                        if (window.supabase) {
+                            clearInterval(checkSupabase);
+                            resolve();
+                        }
+                    }, 100);
+                }
+            });
+        }
+
+        // Initialize Supabase client
+        async function initializeSupabase() {
+            await waitForSupabase();
+            console.log('Supabase loaded, initializing client...');
+            const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                auth: {
+                    autoRefreshToken: true,
+                    persistSession: true,
+                    detectSessionInUrl: true
+                }
+            });
+            console.log('Supabase client initialized');
+            return supabaseClient;
+        }
+
+        // Initialize Supabase and load data
+        let supabaseClient;
         async function initialize() {
             try {
-                console.log('Initializing dashboard...');
-                const supabase = await getSupabaseClient();
-                console.log('Supabase client initialized:', supabase);
-                
-                // Load navbar
-                console.log('Loading navbar...');
-                const navbarResponse = await fetch('components/navbar.html');
-                const navbarHtml = await navbarResponse.text();
-                document.getElementById('navbar').innerHTML = navbarHtml;
-                
-                // Initialize mobile menu functionality
-                console.log('Initializing mobile menu...');
-                initializeMobileMenu();
-                
-                // Load clients
-                console.log('Loading clients...');
-                await loadClients(supabase);
-                
-                console.log('Dashboard initialization complete');
+                supabaseClient = await initializeSupabase();
+                await loadClients();
             } catch (error) {
                 console.error('Initialization error:', error);
-                showAlert('Error initializing dashboard. Please refresh the page.', 'error');
+                navigateTo(ROUTES.LOGIN);
             }
         }
         
         // Load clients from Supabase
-        async function loadClients(supabase) {
+        async function loadClients() {
             try {
                 console.log('Starting to load clients...');
                 showLoading(true);
