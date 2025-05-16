@@ -12,7 +12,8 @@
 <body>
   <div class="app-container">
     <!-- Sidebar will be loaded here -->
-    <div id="sidebar-container"></div>
+   <div id="sidebar-container"></div>
+  <div class="sidebar-overlay"></div>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -111,6 +112,11 @@
         loadClients();
       }
     });
+    // Add this to your page scripts
+document.querySelector('.sidebar-overlay').addEventListener('click', function() {
+  document.querySelector('.sidebar').classList.remove('show');
+});
+
   </script>
 </body>
 </html>

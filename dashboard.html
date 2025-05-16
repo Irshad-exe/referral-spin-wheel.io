@@ -12,20 +12,8 @@
 </head>
 <body>
   <div class="app-container">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <h1 class="logo">LakshInvestment</h1>
-      </div>
-      <nav class="sidebar-nav">
-        <ul>
-          <li class="active"><a href="dashboard.html"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-          <li><a href="clients.html"><i class="fas fa-users"></i> Clients</a></li>
-          <li><a href="referrals.html"><i class="fas fa-user-plus"></i> Referrals</a></li>
-          <li><a href="#" onclick="auth.logout(); return false;"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-        </ul>
-      </nav>
-    </aside>
+   <div id="sidebar-container"></div>
+  <div class="sidebar-overlay"></div>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -314,6 +302,11 @@
         }
       });
     }
+    // Add this to your page scripts
+document.querySelector('.sidebar-overlay').addEventListener('click', function() {
+  document.querySelector('.sidebar').classList.remove('show');
+});
+
   </script>
 </body>
 </html>

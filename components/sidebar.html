@@ -1,41 +1,43 @@
 <!-- components/sidebar.html -->
 <aside class="sidebar">
   <div class="sidebar-header">
-    <a href="javascript:window.location.href=auth.ROUTES.DASHBOARD" class="logo-container">
-      <img src="/logo.jpg" alt="LakshInvestment Logo" class="logo-img">
-    </a>
-    <button id="mobile-menu-toggle" class="mobile-menu-toggle">
+    <img src="/logo.jpg" alt="LakshInvestment Logo" class="logo-img">
+    <button id="sidebar-toggle" class="sidebar-toggle">
       <i class="fas fa-bars"></i>
     </button>
   </div>
   <nav class="sidebar-nav">
     <ul>
-      <li id="nav-dashboard"><a href="javascript:window.location.href=auth.ROUTES.DASHBOARD"><i class="fas fa-chart-line"></i> <span>Dashboard</span></a></li>
-      <li id="nav-clients"><a href="javascript:window.location.href=auth.ROUTES.CLIENTS"><i class="fas fa-users"></i> <span>Clients</span></a></li>
-      <li id="nav-referrals"><a href="javascript:window.location.href=auth.ROUTES.REFERRALS"><i class="fas fa-user-plus"></i> <span>Referrals</span></a></li>
-      <li><a href="#" onclick="auth.logout(); return false;"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
+      <li id="nav-dashboard"><a href="javascript:window.location.href=auth.ROUTES.DASHBOARD"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+      <li id="nav-clients"><a href="javascript:window.location.href=auth.ROUTES.CLIENTS"><i class="fas fa-users"></i> Clients</a></li>
+      <li id="nav-referrals"><a href="javascript:window.location.href=auth.ROUTES.REFERRALS"><i class="fas fa-user-plus"></i> Referrals</a></li>
+      <li><a href="#" onclick="auth.logout(); return false;"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
     </ul>
   </nav>
 </aside>
 
+<div class="mobile-header">
+  <button id="mobile-toggle" class="mobile-toggle">
+    <i class="fas fa-bars"></i>
+  </button>
+  <img src="/logo.jpg" alt="LakshInvestment Logo" class="mobile-logo">
+</div>
+
 <script>
-  // Mobile menu toggle
-  document.getElementById('mobile-menu-toggle').addEventListener('click', function() {
-    document.querySelector('.sidebar').classList.toggle('mobile-open');
-    document.querySelector('.main-content').classList.toggle('sidebar-open');
+  document.getElementById('mobile-toggle').addEventListener('click', function() {
+    document.querySelector('.sidebar').classList.toggle('show');
   });
   
-  // Close sidebar when clicking outside on mobile
-  document.addEventListener('click', function(event) {
-    const sidebar = document.querySelector('.sidebar');
-    const toggleButton = document.getElementById('mobile-menu-toggle');
-    
-    if (window.innerWidth <= 768 && 
-        sidebar.classList.contains('mobile-open') && 
-        !sidebar.contains(event.target) && 
-        event.target !== toggleButton) {
-      sidebar.classList.remove('mobile-open');
-      document.querySelector('.main-content').classList.remove('sidebar-open');
-    }
+  document.getElementById('sidebar-toggle').addEventListener('click', function() {
+    document.querySelector('.sidebar').classList.toggle('show');
+  });
+  
+  // Close sidebar when clicking on a link on mobile
+  document.querySelectorAll('.sidebar-nav a').forEach(link => {
+    link.addEventListener('click', function() {
+      if (window.innerWidth < 992) {
+        document.querySelector('.sidebar').classList.remove('show');
+      }
+    });
   });
 </script>
