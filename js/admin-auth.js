@@ -395,7 +395,7 @@ export {
     isUserAdmin,
     supabase,
     initializeMiddleware,
-    signOut,
+   
     ROUTES,
     PUBLIC_PAGES,
     navigateTo,
