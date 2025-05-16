@@ -10,10 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://irshad-exe.github.io/referral-spin-wheel.io/css/styles.css">
-    <!-- Load Supabase JS first -->
+    <!-- Load Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Load our initialization script -->
-    <script src="js/supabase-init.js"></script>
 </head>
 <body>
     <!-- Include Navigation -->
@@ -72,8 +70,8 @@
         </div>
     </main>
 
-    <script type="module">
-        // Define constants locally instead of importing to avoid conflicts
+    <script>
+        // Constants
         const SUPABASE_URL = 'https://nnqxwcmncytolztvvpvi.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ucXh3Y21uY3l0b2x6dHZ2cHZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4MDg0MjMsImV4cCI6MjA2MjM4NDQyM30.2Ad2Wv3YC9DwxOG82JBF21BGvkS6gbIFOpPXLCWkdso';
         const BASE_URL = 'https://irshad-exe.github.io/referral-spin-wheel.io';
@@ -91,14 +89,14 @@
             window.location.href = route;
         }
         
-        // Use our global initialization function
+        // Global supabase client
         let supabase;
         
-        // Initialize Supabase and middleware
+        // Initialize Supabase and load clients
         async function initialize() {
             try {
-                // Initialize Supabase using our global function
                 console.log('Initializing Supabase client...');
+                
                 // Initialize Supabase directly
                 if (window.supabase) {
                     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -108,12 +106,12 @@
                             detectSessionInUrl: true
                         }
                     });
+                    console.log('Supabase client initialized:', supabase);
                 } else {
                     throw new Error('Supabase library not loaded');
                 }
-                console.log('Supabase client initialized:', supabase);
                 
-                // Simple auth check instead of using middleware
+                // Simple auth check
                 const { data: { session }, error: sessionError } = await supabase.auth.getSession();
                 if (sessionError || !session) {
                     console.error('Authentication error:', sessionError);
@@ -126,7 +124,7 @@
                 await loadClients();
             } catch (error) {
                 console.error('Initialization error:', error);
-                navigateTo(ROUTES.LOGIN);
+                showAlert('Error initializing: ' + error.message, 'error');
             }
         }
         
@@ -244,7 +242,7 @@
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
+                .replace(/\"/g, '&quot;')
                 .replace(/'/g, '&#039;');
         }
         
@@ -259,59 +257,6 @@
             if (paginationElement) paginationElement.style.display = show ? 'none' : 'flex';
         }
         
-        // Initialize mobile menu functionality
-        function initializeMobileMenu() {
-            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-            const navLinksEl = document.getElementById('navLinks');
-            const dropdownToggles = document.querySelectorAll('.nav-dropdown-toggle');
-            
-            if (mobileMenuBtn) {
-                mobileMenuBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    this.classList.toggle('active');
-                    if (navLinksEl) navLinksEl.classList.toggle('active');
-                    document.body.classList.toggle('menu-open');
-                });
-            }
-            
-            // Close mobile menu when clicking on a nav link
-            document.querySelectorAll('.nav-link:not(.nav-dropdown-toggle)').forEach(link => {
-                link.addEventListener('click', () => {
-                    if (window.innerWidth <= 768) {
-                        if (mobileMenuBtn) mobileMenuBtn.classList.remove('active');
-                        if (navLinksEl) navLinksEl.classList.remove('active');
-                        document.body.classList.remove('menu-open');
-                    }
-                });
-            });
-            
-            // Dropdown toggle for mobile
-            dropdownToggles.forEach(toggle => {
-                toggle.addEventListener('click', function(e) {
-                    if (window.innerWidth <= 768) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const dropdown = this.closest('.nav-dropdown');
-                        dropdown.classList.toggle('active');
-                    }
-                });
-            });
-            
-            // Close dropdowns when clicking outside
-            document.addEventListener('click', function(e) {
-                if (window.innerWidth > 768) return;
-                
-                const isClickInsideNav = navLinksEl && navLinksEl.contains(e.target);
-                const isClickOnMenuBtn = mobileMenuBtn && mobileMenuBtn.contains(e.target);
-                
-                if (!isClickInsideNav && !isClickOnMenuBtn) {
-                    if (mobileMenuBtn) mobileMenuBtn.classList.remove('active');
-                    if (navLinksEl) navLinksEl.classList.remove('active');
-                    document.body.classList.remove('menu-open');
-                }
-            });
-        }
-        
         // Show alert message
         function showAlert(message, type = 'info') {
             const alertDiv = document.createElement('div');
@@ -324,9 +269,22 @@
             }, 5000);
         }
         
+        // Load navigation
+        function loadNavbar() {
+            fetch('components/navbar.html')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('navbar').innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error loading navigation:', error);
+                });
+        }
+        
         // Initialize when the page loads
         document.addEventListener('DOMContentLoaded', () => {
             console.log('DOM Content Loaded, starting initialization...');
+            loadNavbar();
             initialize();
         });
     </script>
