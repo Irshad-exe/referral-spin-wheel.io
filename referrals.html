@@ -92,15 +92,25 @@
   <script src="js/auth.js"></script>
   <script src="js/referrals.js"></script>
   <script>
-    // Load sidebar
-    fetch('components/sidebar.html')
+   fetch('components/sidebar.html')
       .then(response => response.text())
       .then(html => {
         document.getElementById('sidebar-container').innerHTML = html;
         // Set active nav item
-        document.getElementById('nav-referrals').classList.add('active');
+        document.getElementById('nav-clients').classList.add('active');
+        
+        // Setup mobile menu
+        document.getElementById('mobile-menu-btn').addEventListener('click', function() {
+          document.querySelector('.sidebar').classList.toggle('show');
+          document.querySelector('.sidebar-overlay').classList.toggle('show');
+        });
+        
+        // Close sidebar when clicking overlay
+        document.querySelector('.sidebar-overlay').addEventListener('click', function() {
+          document.querySelector('.sidebar').classList.remove('show');
+          document.querySelector('.sidebar-overlay').classList.remove('show');
+        });
       });
-    
     // Check authentication
     document.addEventListener('DOMContentLoaded', async () => {
       const isAuthenticated = await auth.requireAuth();
@@ -113,9 +123,6 @@
       }
     });
     // Add this to your page scripts
-document.querySelector('.sidebar-overlay').addEventListener('click', function() {
-  document.querySelector('.sidebar').classList.remove('show');
-});
 
   </script>
 </body>

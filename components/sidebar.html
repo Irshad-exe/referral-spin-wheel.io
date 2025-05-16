@@ -2,9 +2,6 @@
 <aside class="sidebar">
   <div class="sidebar-header">
     <img src="/logo.jpg" alt="LakshInvestment Logo" class="logo-img">
-    <button id="sidebar-toggle" class="sidebar-toggle">
-      <i class="fas fa-bars"></i>
-    </button>
   </div>
   <nav class="sidebar-nav">
     <ul>
@@ -17,27 +14,8 @@
 </aside>
 
 <div class="mobile-header">
-  <button id="mobile-toggle" class="mobile-toggle">
+  <button id="mobile-menu-btn" class="mobile-menu-btn">
     <i class="fas fa-bars"></i>
   </button>
   <img src="/logo.jpg" alt="LakshInvestment Logo" class="mobile-logo">
 </div>
-
-<script>
-  document.getElementById('mobile-toggle').addEventListener('click', function() {
-    document.querySelector('.sidebar').classList.toggle('show');
-  });
-  
-  document.getElementById('sidebar-toggle').addEventListener('click', function() {
-    document.querySelector('.sidebar').classList.toggle('show');
-  });
-  
-  // Close sidebar when clicking on a link on mobile
-  document.querySelectorAll('.sidebar-nav a').forEach(link => {
-    link.addEventListener('click', function() {
-      if (window.innerWidth < 992) {
-        document.querySelector('.sidebar').classList.remove('show');
-      }
-    });
-  });
-</script>
