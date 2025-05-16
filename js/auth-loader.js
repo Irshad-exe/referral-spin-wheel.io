@@ -9,18 +9,11 @@ if (!window.supabase) {
     script.async = true;
     script.onload = () => {
         console.log('Supabase script loaded');
-        // Load admin auth after Supabase is loaded
-        const authScript = document.createElement('script');
-        authScript.src = 'https://irshad-exe.github.io/referral-spin-wheel.io/js/admin-auth.js';
-        authScript.type = 'module';
-        document.head.appendChild(authScript);
+        // We don't need to dynamically load admin-auth.js here
+        // as it's already included in the HTML with type="module"
     };
     document.head.appendChild(script);
 } else {
     console.log('Supabase already loaded');
-    // Load admin auth if Supabase is already loaded
-    const authScript = document.createElement('script');
-    authScript.src = 'https://irshad-exe.github.io/referral-spin-wheel.io/js/admin-auth.js';
-    authScript.type = 'module';
-    document.head.appendChild(authScript);
-} 
+    // No need to load admin-auth.js again
+}
