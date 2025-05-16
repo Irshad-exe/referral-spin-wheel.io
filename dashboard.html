@@ -1,0 +1,319 @@
+<!-- dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - LakshInvestment</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h1 class="logo">LakshInvestment</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <ul>
+          <li class="active"><a href="dashboard.html"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+          <li><a href="clients.html"><i class="fas fa-users"></i> Clients</a></li>
+          <li><a href="referrals.html"><i class="fas fa-user-plus"></i> Referrals</a></li>
+          <li><a href="#" onclick="auth.logout(); return false;"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="content-header">
+        <h1>Dashboard</h1>
+        <div class="user-info">
+          <span id="user-email">Admin</span>
+          <div class="avatar">
+            <i class="fas fa-user"></i>
+          </div>
+        </div>
+      </header>
+
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-card-content">
+            <h3>Total Clients</h3>
+            <div class="stat-value" id="total-clients">0</div>
+          </div>
+          <div class="stat-card-icon blue">
+            <i class="fas fa-users"></i>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-content">
+            <h3>Referred Clients</h3>
+            <div class="stat-value" id="referred-clients">0</div>
+          </div>
+          <div class="stat-card-icon green">
+            <i class="fas fa-user-plus"></i>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-content">
+            <h3>Clients with Ladoos</h3>
+            <div class="stat-value" id="clients-with-ladoos">0</div>
+          </div>
+          <div class="stat-card-icon orange">
+            <i class="fas fa-cookie"></i>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-content">
+            <h3>Clients with 3 Ladoos</h3>
+            <div class="stat-value" id="clients-with-three-ladoos">0</div>
+          </div>
+          <div class="stat-card-icon purple">
+            <i class="fas fa-award"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="charts-container">
+        <div class="chart-card">
+          <h3>Referrals Over Time</h3>
+          <div class="chart-container">
+            <canvas id="referrals-chart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <h3>Ladoo Distribution</h3>
+          <div class="chart-container">
+            <canvas id="ladoos-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Recent Activity</h3>
+          <a href="clients.html" class="btn btn-sm">View All</a>
+        </div>
+        <div class="table-container">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Client</th>
+                <th>Action</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="recent-activity">
+              <!-- Activity data will be inserted here -->
+              <tr>
+                <td colspan="3" class="text-center">Loading recent activity...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script>
+    // Check authentication
+    document.addEventListener('DOMContentLoaded', async () => {
+      const isAuthenticated = await auth.requireAuth();
+      if (isAuthenticated) {
+        const { user } = await auth.checkAuth();
+        if (user) {
+          document.getElementById('user-email').textContent = user.email;
+        }
+        loadDashboardData();
+      }
+    });
+
+    // Load dashboard data
+    async function loadDashboardData() {
+      try {
+        // Get total clients
+        const { count: totalClients } = await auth.supabase
+          .from('clients')
+          .select('*', { count: 'exact', head: true });
+        
+        document.getElementById('total-clients').textContent = totalClients || 0;
+
+        // Get referred clients
+        const { count: referredClients } = await auth.supabase
+          .from('referrals')
+          .select('*', { count: 'exact', head: true });
+        
+        document.getElementById('referred-clients').textContent = referredClients || 0;
+
+        // Get clients with ladoos
+        const { data: ladooData } = await auth.supabase
+          .from('ladoos')
+          .select('client_id, color');
+        
+        // Count unique clients with ladoos
+        const clientsWithLadoos = new Set();
+        const ladooCounts = {};
+        
+        if (ladooData) {
+          ladooData.forEach(ladoo => {
+            clientsWithLadoos.add(ladoo.client_id);
+            
+            if (!ladooCounts[ladoo.client_id]) {
+              ladooCounts[ladoo.client_id] = { red: 0, yellow: 0, green: 0 };
+            }
+            
+            if (ladoo.color) {
+              ladooCounts[ladoo.client_id][ladoo.color]++;
+            }
+          });
+        }
+        
+        document.getElementById('clients-with-ladoos').textContent = clientsWithLadoos.size;
+        
+        // Count clients with all 3 ladoo colors
+        let clientsWith3Ladoos = 0;
+        
+        Object.values(ladooCounts).forEach(counts => {
+          if (counts.red > 0 && counts.yellow > 0 && counts.green > 0) {
+            clientsWith3Ladoos++;
+          }
+        });
+        
+        document.getElementById('clients-with-three-ladoos').textContent = clientsWith3Ladoos;
+
+        // Load recent activity
+        const { data: recentReferrals } = await auth.supabase
+          .from('referrals')
+          .select('*, clients!referrals_referrer_id_fkey(name)')
+          .order('created_at', { ascending: false })
+          .limit(5);
+        
+        const activityTable = document.getElementById('recent-activity');
+        activityTable.innerHTML = '';
+        
+        if (recentReferrals && recentReferrals.length > 0) {
+          recentReferrals.forEach(referral => {
+            const row = document.createElement('tr');
+            const date = new Date(referral.created_at).toLocaleDateString();
+            
+            row.innerHTML = `
+              <td>${referral.clients?.name || 'Unknown'}</td>
+              <td>Made a referral</td>
+              <td>${date}</td>
+            `;
+            
+            activityTable.appendChild(row);
+          });
+        } else {
+          activityTable.innerHTML = '<tr><td colspan="3" class="text-center">No recent activity</td></tr>';
+        }
+
+        // Initialize charts
+        initCharts(ladooData, recentReferrals);
+        
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      }
+    }
+
+    // Initialize charts
+    function initCharts(ladooData, referralData) {
+      // Prepare data for ladoo distribution chart
+      const ladooColors = { red: 0, yellow: 0, green: 0 };
+      
+      if (ladooData) {
+        ladooData.forEach(ladoo => {
+          if (ladoo.color) {
+            ladooColors[ladoo.color]++;
+          }
+        });
+      }
+      
+      // Create ladoo distribution chart
+      const ladooCtx = document.getElementById('ladoos-chart').getContext('2d');
+      new Chart(ladooCtx, {
+        type: 'pie',
+        data: {
+          labels: ['Red Ladoos', 'Yellow Ladoos', 'Green Ladoos'],
+          datasets: [{
+            data: [ladooColors.red, ladooColors.yellow, ladooColors.green],
+            backgroundColor: ['#ef4444', '#eab308', '#22c55e']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+      
+      // Prepare data for referrals chart
+      const last6Months = [];
+      const referralCounts = [];
+      
+      // Generate last 6 months
+      for (let i = 5; i >= 0; i--) {
+        const date = new Date();
+        date.setMonth(date.getMonth() - i);
+        const monthName = date.toLocaleString('default', { month: 'short' });
+        const year = date.getFullYear();
+        last6Months.push(`${monthName} ${year}`);
+        referralCounts.push(0);
+      }
+      
+      // Count referrals by month
+      if (referralData) {
+        referralData.forEach(referral => {
+          const referralDate = new Date(referral.created_at);
+          const monthYear = `${referralDate.toLocaleString('default', { month: 'short' })} ${referralDate.getFullYear()}`;
+          const index = last6Months.indexOf(monthYear);
+          
+          if (index !== -1) {
+            referralCounts[index]++;
+          }
+        });
+      }
+      
+      // Create referrals chart
+      const referralCtx = document.getElementById('referrals-chart').getContext('2d');
+      new Chart(referralCtx, {
+        type: 'line',
+        data: {
+          labels: last6Months,
+          datasets: [{
+            label: 'Referrals',
+            data: referralCounts,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.3,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                precision: 0
+              }
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>

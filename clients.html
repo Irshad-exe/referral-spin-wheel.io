@@ -1,0 +1,95 @@
+<!-- clients.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clients - LakshInvestment</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar will be loaded here -->
+    <div id="sidebar-container"></div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="content-header">
+        <h1>Client Management</h1>
+        <div class="user-info">
+          <span id="user-email">Admin</span>
+          <div class="avatar">
+            <i class="fas fa-user"></i>
+          </div>
+        </div>
+      </header>
+      
+      <div class="card">
+        <div class="card-header">
+          <h3>All Clients</h3>
+          <div class="d-flex gap-2">
+            <input type="text" id="search-input" class="form-control" placeholder="Search by name or UCC...">
+            <button id="search-btn" class="btn btn-primary">Search</button>
+          </div>
+        </div>
+        
+        <!-- Add loading indicator -->
+        <div id="loading" class="text-center p-4">
+          <div class="loading-spinner"></div>
+          <p>Loading clients...</p>
+        </div>
+        
+        <div class="table-container">
+          <table class="table" id="clients-table" style="display: none;">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>UCC</th>
+                <th>Contact</th>
+                <th>Ladoo Count</th>
+                <th>Referrals</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="clients-tbody">
+              <!-- Client data will be inserted here -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div id="no-results" class="text-center mt-4" style="display: none;">
+          <p>No clients found matching your search criteria.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/clients.js"></script>
+  <script>
+    // Load sidebar
+    fetch('components/sidebar.html')
+      .then(response => response.text())
+      .then(html => {
+        document.getElementById('sidebar-container').innerHTML = html;
+        // Set active nav item
+        document.getElementById('nav-clients').classList.add('active');
+      });
+    
+    // Check authentication
+    document.addEventListener('DOMContentLoaded', async () => {
+      const isAuthenticated = await auth.requireAuth();
+      if (isAuthenticated) {
+        const { user } = await auth.checkAuth();
+        if (user) {
+          document.getElementById('user-email').textContent = user.email;
+        }
+        loadClients();
+      }
+    });
+  </script>
+</body>
+</html>
