@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#1d4ed8">
-    <title>Dashboard - LakshInvestment</title>
+    <title>Admin Dashboard - LakshInvestment</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -20,69 +20,80 @@
     <main class="dashboard">
         <div class="container">
             <div class="dashboard-header">
-                <h1>User Dashboard</h1>
-            </div>
-
-            <div id="auth-content" style="display: none;">
-                <div class="dashboard-stats">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-gift"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>Your Ladoos</h3>
-                            <p id="ladoo-count">Loading...</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-user-plus"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>Referrals</h3>
-                            <p id="referral-count">Loading...</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="dashboard-actions">
-                    <button id="spin-wheel-btn" class="button btn-primary">
-                        <i class="fas fa-dharmachakra"></i> Spin the Wheel
-                    </button>
-                    <button id="refer-friend-btn" class="button btn-outline-primary">
-                        <i class="fas fa-share"></i> Refer a Friend
+                <h1>Admin Dashboard</h1>
+                <div class="search-container">
+                    <input type="text" id="search-input" class="search-input" placeholder="Search by name, email or UCC..." autocomplete="off">
+                    <button id="search-button" class="search-button">
+                        <i class="fas fa-search"></i>
+                        Search
                     </button>
                 </div>
+            </div>
 
-                <div class="dashboard-section">
-                    <h2>Recent Activity</h2>
-                    <div class="table-responsive">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Activity</th>
-                                    <th>Ladoos</th>
-                                </tr>
-                            </thead>
-                            <tbody id="activity-table-body">
-                                <!-- Activity data will be inserted here -->
-                            </tbody>
-                        </table>
+            <div class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Total Clients</h3>
+                        <p id="client-count">Loading...</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-gift"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Total Ladoos</h3>
+                        <p id="total-ladoos">Loading...</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Total Referrals</h3>
+                        <p id="total-referrals">Loading...</p>
                     </div>
                 </div>
             </div>
 
-            <div id="auth-error" style="display: none;" class="auth-message">
-                <i class="fas fa-lock" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
-                <h2>Authentication Required</h2>
-                <p>You need to be logged in to view your dashboard.</p>
-                <button id="login-redirect" class="button btn-primary">Go to Login</button>
-            </div>
+            <div class="table-responsive">
+                <div id="loading" class="loading">
+                    <div class="loading-spinner"></div>
+                    <span>Loading clients...</span>
+                </div>
 
-            <div id="loading" class="loading">
-                <div class="loading-spinner"></div>
-                <span>Loading dashboard...</span>
+                <table id="clients-table" class="data-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>UCC</th>
+                            <th>Contact</th>
+                            <th>Ladoo Count</th>
+                            <th>Referrals</th>
+                            <th>Created At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clients-tbody">
+                        <!-- Client data will be inserted here -->
+                    </tbody>
+                </table>
+
+                <div id="no-results" class="no-results" style="display: none;">
+                    <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                    <p>No clients found matching your search criteria.</p>
+                </div>
+                
+                <div id="auth-error" class="no-results" style="display: none;">
+                    <i class="fas fa-lock" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                    <p>You need to be logged in as an admin to view this dashboard.</p>
+                    <button id="login-redirect" class="button btn-primary">Go to Login</button>
+                </div>
             </div>
         </div>
     </main>
@@ -96,8 +107,7 @@
         // Routes
         const BASE_URL = 'https://irshad-exe.github.io/referral-spin-wheel.io';
         const ROUTES = {
-            LOGIN: `${BASE_URL}/login.html`,
-            SPIN: `${BASE_URL}/spin.html`
+            LOGIN: `${BASE_URL}/login.html`
         };
         
         // Navigation function
@@ -105,18 +115,46 @@
             window.location.href = route;
         }
         
+        // Check if user is admin
+        async function isUserAdmin(userId) {
+            try {
+                const { data: adminData, error: adminError } = await supabase
+                    .from('admin_users')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .single();
+
+                if (adminError) {
+                    console.error('Error checking admin_users table:', adminError);
+                    return false;
+                }
+
+                return !!adminData;
+            } catch (error) {
+                console.error('Error checking admin status:', error);
+                return false;
+            }
+        }
+        
         // Check authentication status
         async function checkAuth() {
             try {
                 const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error || !session) {
+                    return { isAuthenticated: false };
+                }
+                
+                const isAdmin = await isUserAdmin(session.user.id);
+                
                 return { 
-                    isAuthenticated: !!session, 
-                    session,
-                    error
+                    isAuthenticated: true, 
+                    isAdmin,
+                    session
                 };
             } catch (error) {
                 console.error('Auth check error:', error);
-                return { isAuthenticated: false, error };
+                return { isAuthenticated: false };
             }
         }
         
@@ -126,31 +164,24 @@
                 showLoading(true);
                 
                 // Check authentication first
-                const { isAuthenticated, session, error: authError } = await checkAuth();
+                const { isAuthenticated, isAdmin, session } = await checkAuth();
                 
-                if (authError) {
-                    console.error('Authentication error:', authError);
+                if (!isAuthenticated || !isAdmin) {
+                    console.log('User not authenticated or not admin');
                     showAuthError(true);
                     return;
                 }
                 
-                if (!isAuthenticated) {
-                    console.log('User not authenticated');
-                    showAuthError(true);
-                    return;
-                }
+                console.log('Admin authenticated:', session.user.email);
                 
-                console.log('User authenticated:', session.user.email);
+                // Load clients data
+                await loadClients();
                 
-                // Load user data
-                await loadUserData(session.user.id);
+                // Load dashboard stats
+                await loadDashboardStats();
                 
-                // Show authenticated content
-                document.getElementById('auth-content').style.display = 'block';
-                document.getElementById('auth-error').style.display = 'none';
-                
-                // Setup button actions
-                setupButtonActions();
+                // Setup search functionality
+                setupSearch();
                 
             } catch (error) {
                 console.error('Dashboard initialization error:', error);
@@ -160,114 +191,185 @@
             }
         }
         
-        // Load user data
-        async function loadUserData(userId) {
+        // Load clients
+        async function loadClients() {
             try {
-                // Get user profile
-                const { data: profile, error: profileError } = await supabase
-                    .from('user_profiles')
+                console.log('Loading clients...');
+                
+                // Fetch clients data
+                const { data: clients, error } = await supabase
+                    .from('clients')
                     .select('*')
-                    .eq('user_id', userId)
-                    .single();
-                
-                if (profileError && profileError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-                    console.error('Error fetching user profile:', profileError);
-                    throw profileError;
-                }
-                
-                // Update ladoo count
-                const ladooCount = profile?.ladoo_count || 0;
-                document.getElementById('ladoo-count').textContent = ladooCount;
-                
-                // Get referral count
-                const { count: referralCount, error: referralError } = await supabase
-                    .from('referrals')
-                    .select('id', { count: 'exact', head: true })
-                    .eq('referrer_id', userId);
-                
-                if (referralError) {
-                    console.error('Error fetching referral count:', referralError);
-                    // Continue anyway, just show 0
-                }
-                
-                document.getElementById('referral-count').textContent = referralCount || 0;
-                
-                // Load activity
-                await loadActivity(userId);
-                
-            } catch (error) {
-                console.error('Error loading user data:', error);
-                showAlert('Error loading user data', 'error');
-            }
-        }
-        
-        // Load activity
-        async function loadActivity(userId) {
-            try {
-                const { data: activities, error } = await supabase
-                    .from('user_activities')
-                    .select('*')
-                    .eq('user_id', userId)
-                    .order('created_at', { ascending: false })
-                    .limit(5);
+                    .order('created_at', { ascending: false });
                 
                 if (error) {
-                    console.error('Error fetching activities:', error);
+                    console.error('Error fetching clients:', error);
                     throw error;
                 }
                 
-                const tableBody = document.getElementById('activity-table-body');
-                tableBody.innerHTML = '';
+                const clientsTbody = document.getElementById('clients-tbody');
+                clientsTbody.innerHTML = '';
                 
-                if (activities && activities.length > 0) {
-                    activities.forEach(activity => {
+                if (clients && clients.length > 0) {
+                    console.log(`Found ${clients.length} clients`);
+                    
+                    // Get referral counts for each client
+                    const referralCounts = await getClientReferralCounts();
+                    
+                    clients.forEach(client => {
                         const row = document.createElement('tr');
-                        const date = new Date(activity.created_at).toLocaleDateString();
+                        const createdAt = client.created_at ? new Date(client.created_at).toLocaleDateString() : 'N/A';
+                        const referralCount = referralCounts[client.id] || 0;
                         
                         row.innerHTML = `
-                            <td>${date}</td>
-                            <td>${escapeHtml(activity.description)}</td>
-                            <td>${activity.ladoo_change > 0 ? '+' : ''}${activity.ladoo_change}</td>
+                            <td data-label="Name">${escapeHtml(client.name || 'N/A')}</td>
+                            <td data-label="Email">${escapeHtml(client.email || 'N/A')}</td>
+                            <td data-label="UCC">${escapeHtml(client.ucc || 'N/A')}</td>
+                            <td data-label="Contact">${escapeHtml(client.contact_info || 'N/A')}</td>
+                            <td data-label="Ladoo Count">${client.ladoo_count || 0}</td>
+                            <td data-label="Referrals">${referralCount}</td>
+                            <td data-label="Created At">${createdAt}</td>
+                            <td data-label="Actions">
+                                <button class="button btn-outline-primary btn-sm" onclick="viewClient('${client.id}')">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                            </td>
                         `;
                         
-                        tableBody.appendChild(row);
+                        clientsTbody.appendChild(row);
                     });
+                    
+                    document.getElementById('clients-table').style.display = 'table';
+                    document.getElementById('no-results').style.display = 'none';
                 } else {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td colspan="3" style="text-align: center;">No recent activity</td>
-                    `;
-                    tableBody.appendChild(row);
+                    document.getElementById('clients-table').style.display = 'none';
+                    document.getElementById('no-results').style.display = 'block';
                 }
                 
             } catch (error) {
-                console.error('Error loading activity:', error);
-                const tableBody = document.getElementById('activity-table-body');
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="3" style="text-align: center;">Error loading activity</td>
-                    </tr>
-                `;
+                console.error('Error loading clients:', error);
+                showAlert('Error loading clients: ' + error.message, 'error');
             }
         }
         
-        // Setup button actions
-        function setupButtonActions() {
-            // Spin wheel button
-            document.getElementById('spin-wheel-btn').addEventListener('click', () => {
-                navigateTo(ROUTES.SPIN);
-            });
-            
-            // Refer friend button
-            document.getElementById('refer-friend-btn').addEventListener('click', () => {
-                showReferralModal();
-            });
+        // Get referral counts for all clients
+        async function getClientReferralCounts() {
+            try {
+                const { data: referrals, error } = await supabase
+                    .from('referrals')
+                    .select('referrer_id');
+                
+                if (error) {
+                    console.error('Error fetching referrals:', error);
+                    return {};
+                }
+                
+                // Count referrals by referrer_id
+                const counts = {};
+                referrals.forEach(ref => {
+                    if (ref.referrer_id) {
+                        counts[ref.referrer_id] = (counts[ref.referrer_id] || 0) + 1;
+                    }
+                });
+                
+                return counts;
+            } catch (error) {
+                console.error('Error getting referral counts:', error);
+                return {};
+            }
         }
         
-        // Show referral modal
-        function showReferralModal() {
-            // Implement referral modal
-            showAlert('Referral feature coming soon!', 'info');
+        // Load dashboard stats
+        async function loadDashboardStats() {
+            try {
+                // Get total clients count
+                const { count: clientCount, error: clientError } = await supabase
+                    .from('clients')
+                    .select('id', { count: 'exact', head: true });
+                
+                if (clientError) {
+                    console.error('Error counting clients:', clientError);
+                }
+                
+                document.getElementById('client-count').textContent = clientCount || 0;
+                
+                // Get total ladoos
+                const { data: ladooSum, error: ladooError } = await supabase
+                    .from('clients')
+                    .select('ladoo_count');
+                
+                if (ladooError) {
+                    console.error('Error fetching ladoo counts:', ladooError);
+                } else {
+                    const totalLadoos = ladooSum.reduce((sum, client) => sum + (client.ladoo_count || 0), 0);
+                    document.getElementById('total-ladoos').textContent = totalLadoos;
+                }
+                
+                // Get total referrals
+                const { count: referralCount, error: referralError } = await supabase
+                    .from('referrals')
+                    .select('id', { count: 'exact', head: true });
+                
+                if (referralError) {
+                    console.error('Error counting referrals:', referralError);
+                }
+                
+                document.getElementById('total-referrals').textContent = referralCount || 0;
+                
+            } catch (error) {
+                console.error('Error loading dashboard stats:', error);
+            }
+        }
+        
+        // Setup search functionality
+        function setupSearch() {
+            const searchInput = document.getElementById('search-input');
+            const searchButton = document.getElementById('search-button');
+            
+            if (searchInput && searchButton) {
+                searchButton.addEventListener('click', performSearch);
+                searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        performSearch();
+                    }
+                });
+            }
+        }
+        
+        // Perform search
+        function performSearch() {
+            const searchInput = document.getElementById('search-input');
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('#clients-tbody tr');
+            let matchFound = false;
+            
+            rows.forEach(row => {
+                const name = row.cells[0].textContent.toLowerCase();
+                const email = row.cells[1].textContent.toLowerCase();
+                const ucc = row.cells[2].textContent.toLowerCase();
+                const contact = row.cells[3].textContent.toLowerCase();
+                
+                if (name.includes(searchTerm) || 
+                    email.includes(searchTerm) || 
+                    ucc.includes(searchTerm) || 
+                    contact.includes(searchTerm)) {
+                    row.style.display = '';
+                    matchFound = true;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Show/hide no results message
+            document.getElementById('no-results').style.display = matchFound ? 'none' : 'block';
+            document.getElementById('clients-table').style.display = matchFound ? 'table' : 'none';
+        }
+        
+        // View client details
+        function viewClient(clientId) {
+            console.log('Viewing client:', clientId);
+            // Implement client view functionality
+            showAlert(`Viewing client ${clientId}`, 'info');
         }
         
         // Helper function to escape HTML
@@ -290,10 +392,12 @@
         // Show authentication error
         function showAuthError(show) {
             const authErrorElement = document.getElementById('auth-error');
-            const authContentElement = document.getElementById('auth-content');
+            const clientsTable = document.getElementById('clients-table');
+            const noResultsElement = document.getElementById('no-results');
             
             if (authErrorElement) authErrorElement.style.display = show ? 'block' : 'none';
-            if (authContentElement) authContentElement.style.display = show ? 'none' : 'block';
+            if (clientsTable) clientsTable.style.display = 'none';
+            if (noResultsElement) noResultsElement.style.display = 'none';
             
             // Add event listener to login redirect button
             const loginRedirectBtn = document.getElementById('login-redirect');
