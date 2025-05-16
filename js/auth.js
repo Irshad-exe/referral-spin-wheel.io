@@ -11,7 +11,7 @@ const BASE_URL = "https://irshad-exe.github.io/referral-spin-wheel.io";
 // Define routes with BASE_URL
 const ROUTES = {
     HOME: `${BASE_URL}/index.html`,
-    LOGIN: `${BASE_URL}/login.html`,
+    LOGIN: `${BASE_URL}/index.html`,
     DASHBOARD: `${BASE_URL}/dashboard.html`,
     CLIENTS: `${BASE_URL}/clients.html`,
     REFERRALS: `${BASE_URL}/referrals.html`,
