@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="https://irshad-exe.github.io/referral-spin-wheel.io/css/styles.css">
+    <link rel="stylesheet" href="css/styles.css">
     <!-- Load Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -56,75 +56,45 @@
                     <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
                     <p>No clients found matching your search criteria.</p>
                 </div>
-            </div>
-
-            <div class="pagination" id="pagination" style="display: none;">
-                <button id="prev-page" class="pagination-button" disabled>
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-                <!-- Page numbers will be inserted here by JavaScript -->
-                <button id="next-page" class="pagination-button">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
+                
+                <div id="auth-error" class="no-results" style="display: none;">
+                    <i class="fas fa-lock" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                    <p>You need to be logged in to view client data.</p>
+                    <button id="login-redirect" class="button btn-primary">Go to Login</button>
+                </div>
             </div>
         </div>
     </main>
 
     <script>
-        // Constants
+        // Supabase configuration
         const SUPABASE_URL = 'https://nnqxwcmncytolztvvpvi.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ucXh3Y21uY3l0b2x6dHZ2cHZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4MDg0MjMsImV4cCI6MjA2MjM4NDQyM30.2Ad2Wv3YC9DwxOG82JBF21BGvkS6gbIFOpPXLCWkdso';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Routes
         const BASE_URL = 'https://irshad-exe.github.io/referral-spin-wheel.io';
         const ROUTES = {
-            HOME: `${BASE_URL}/index.html`,
-            LOGIN: `${BASE_URL}/login.html`,
-            DASHBOARD: `${BASE_URL}/dashboard.html`,
-            ADMIN: `${BASE_URL}/admin.html`,
-            ADMIN_DASHBOARD: `${BASE_URL}/admin-dashboard.html`
+            LOGIN: `${BASE_URL}/login.html`
         };
         
         // Navigation function
         function navigateTo(route) {
-            console.log('Navigating to:', route);
             window.location.href = route;
         }
         
-        // Global supabase client
-        let supabase;
-        
-        // Initialize Supabase and load clients
-        async function initialize() {
+        // Check authentication status
+        async function checkAuth() {
             try {
-                console.log('Initializing Supabase client...');
-                
-                // Initialize Supabase directly
-                if (window.supabase) {
-                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-                        auth: {
-                            autoRefreshToken: true,
-                            persistSession: true,
-                            detectSessionInUrl: true
-                        }
-                    });
-                    console.log('Supabase client initialized:', supabase);
-                } else {
-                    throw new Error('Supabase library not loaded');
-                }
-                
-                // Simple auth check
-                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-                if (sessionError || !session) {
-                    console.error('Authentication error:', sessionError);
-                    navigateTo(ROUTES.LOGIN);
-                    return;
-                }
-                console.log('User authenticated:', session.user.email);
-                
-                // Load clients if authenticated
-                await loadClients();
+                const { data: { session }, error } = await supabase.auth.getSession();
+                return { 
+                    isAuthenticated: !!session, 
+                    session,
+                    error
+                };
             } catch (error) {
-                console.error('Initialization error:', error);
-                showAlert('Error initializing: ' + error.message, 'error');
+                console.error('Auth check error:', error);
+                return { isAuthenticated: false, error };
             }
         }
         
@@ -134,28 +104,25 @@
                 console.log('Starting to load clients...');
                 showLoading(true);
                 
-                // Make sure supabase is initialized
-                if (!supabase) {
-                    console.error('Supabase client not initialized');
-                    throw new Error('Supabase client not initialized');
+                // Check authentication first
+                const { isAuthenticated, session, error: authError } = await checkAuth();
+                
+                if (authError) {
+                    console.error('Authentication error:', authError);
+                    showAuthError(true);
+                    return;
                 }
                 
-                // First, let's check if we can access the table
-                console.log('Checking table access...');
-                const { count, error: countError } = await supabase
-                    .from('clients')
-                    .select('*', { count: 'exact', head: true });
-                    
-                console.log('Table access check:', { count, error: countError });
-                
-                if (countError) {
-                    console.error('Error accessing clients table:', countError);
-                    throw countError;
+                if (!isAuthenticated) {
+                    console.log('User not authenticated');
+                    showAuthError(true);
+                    return;
                 }
                 
-                console.log(`Found ${count} clients in the table`);
+                console.log('User authenticated:', session.user.email);
                 
-                // Now fetch the actual data
+                // Fetch clients data directly (no count check)
+                console.log('Fetching clients data...');
                 const { data: clients, error } = await supabase
                     .from('clients')
                     .select('*')
@@ -163,7 +130,6 @@
                 
                 console.log('Supabase response:', { 
                     clientsCount: clients?.length,
-                    firstClient: clients?.[0],
                     error 
                 });
                 
@@ -183,12 +149,8 @@
                 
                 if (clients && clients.length > 0) {
                     console.log(`Found ${clients.length} clients, rendering...`);
-                    clients.forEach((client, index) => {
-                        console.log(`Rendering client ${index + 1}:`, client);
+                    clients.forEach(client => {
                         const row = document.createElement('tr');
-                        
-                        // Format created_at date
-                        const createdAt = client.created_at ? new Date(client.created_at).toLocaleDateString() : 'N/A';
                         
                         // Determine status badge
                         let statusClass = 'status-inactive';
@@ -209,7 +171,7 @@
                             <td data-label="Contact">${escapeHtml(client.contact_info || 'N/A')}</td>
                             <td data-label="Status"><span class="status-badge ${statusClass}">${statusText}</span></td>
                             <td data-label="Actions">
-                                <button class="button btn-outline-primary btn-sm" onclick="viewClient(${client.id})">
+                                <button class="button btn-outline-primary btn-sm" onclick="viewClient('${client.id}')">
                                     <i class="fas fa-eye"></i> View
                                 </button>
                             </td>
@@ -221,14 +183,16 @@
                     console.log('Showing clients table...');
                     document.getElementById('clients-table').style.display = 'table';
                     document.getElementById('no-results').style.display = 'none';
+                    document.getElementById('auth-error').style.display = 'none';
                 } else {
                     console.log('No clients found in response, showing no results message...');
                     document.getElementById('clients-table').style.display = 'none';
                     document.getElementById('no-results').style.display = 'block';
+                    document.getElementById('auth-error').style.display = 'none';
                 }
             } catch (error) {
                 console.error('Error loading clients:', error);
-                showAlert('Error loading clients. Please try again.', 'error');
+                showAlert('Error loading clients: ' + error.message, 'error');
             } finally {
                 console.log('Finished loading clients, hiding loading state...');
                 showLoading(false);
@@ -239,22 +203,36 @@
         function escapeHtml(unsafe) {
             if (typeof unsafe !== 'string') return unsafe;
             return unsafe
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/\"/g, '&quot;')
+                .replace(/&/g, '&')
+                .replace(/</g, '<')
+                .replace(/>/g, '>')
+                .replace(/\"/g, '"')
                 .replace(/'/g, '&#039;');
         }
         
         // Toggle loading state
         function showLoading(show) {
             const loadingElement = document.getElementById('loading');
-            const clientsTable = document.getElementById('clients-table');
-            const paginationElement = document.getElementById('pagination');
-            
             if (loadingElement) loadingElement.style.display = show ? 'flex' : 'none';
-            if (clientsTable) clientsTable.style.display = show ? 'none' : 'table';
-            if (paginationElement) paginationElement.style.display = show ? 'none' : 'flex';
+        }
+        
+        // Show authentication error
+        function showAuthError(show) {
+            const authErrorElement = document.getElementById('auth-error');
+            const clientsTable = document.getElementById('clients-table');
+            const noResultsElement = document.getElementById('no-results');
+            
+            if (authErrorElement) authErrorElement.style.display = show ? 'block' : 'none';
+            if (clientsTable) clientsTable.style.display = 'none';
+            if (noResultsElement) noResultsElement.style.display = 'none';
+            
+            // Add event listener to login redirect button
+            const loginRedirectBtn = document.getElementById('login-redirect');
+            if (loginRedirectBtn) {
+                loginRedirectBtn.addEventListener('click', () => {
+                    navigateTo(ROUTES.LOGIN);
+                });
+            }
         }
         
         // Show alert message
@@ -281,11 +259,58 @@
                 });
         }
         
+        // View client details
+        function viewClient(clientId) {
+            console.log('Viewing client:', clientId);
+            // Implement client view functionality
+            showAlert(`Viewing client ${clientId}`, 'info');
+        }
+        
+        // Search functionality
+        function setupSearch() {
+            const searchInput = document.getElementById('search-input');
+            const searchButton = document.getElementById('search-button');
+            
+            if (searchInput && searchButton) {
+                searchButton.addEventListener('click', performSearch);
+                searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        performSearch();
+                    }
+                });
+            }
+        }
+        
+        function performSearch() {
+            const searchInput = document.getElementById('search-input');
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('#clients-tbody tr');
+            let matchFound = false;
+            
+            rows.forEach(row => {
+                const name = row.cells[0].textContent.toLowerCase();
+                const email = row.cells[1].textContent.toLowerCase();
+                const ucc = row.cells[2].textContent.toLowerCase();
+                
+                if (name.includes(searchTerm) || email.includes(searchTerm) || ucc.includes(searchTerm)) {
+                    row.style.display = '';
+                    matchFound = true;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Show/hide no results message
+            document.getElementById('no-results').style.display = matchFound ? 'none' : 'block';
+            document.getElementById('clients-table').style.display = matchFound ? 'table' : 'none';
+        }
+        
         // Initialize when the page loads
         document.addEventListener('DOMContentLoaded', () => {
             console.log('DOM Content Loaded, starting initialization...');
             loadNavbar();
-            initialize();
+            setupSearch();
+            loadClients();
         });
     </script>
 </body>
