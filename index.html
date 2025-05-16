@@ -10,167 +10,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
+    <!-- Load Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        /* Hero Section */
-        .hero {
-            padding: 6rem 0;
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxkZWZzPjxwYXR0ZXJuIGlkPSJwYXR0ZXJuIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHBhdHRlcm5UcmFuc2Zvcm09InJvdGF0ZSg0NSkiPjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0icmdiYSgyOSwgNzgsIDIxNiwgMC4wNSkiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjcGF0dGVybikiLz48L3N2Zz4=');
-            opacity: 0.5;
-            z-index: 0;
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 1;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem;
-            text-align: center;
-        }
-
-        .hero h1 {
-            font-size: 3rem;
-            margin-bottom: 1.5rem;
-            color: var(--text-primary);
-            line-height: 1.2;
-        }
-
-        .hero p {
-            font-size: 1.25rem;
-            color: var(--text-secondary);
-            max-width: 800px;
-            margin: 0 auto 2.5rem;
-            line-height: 1.6;
-        }
-
-        .hero-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .hero-image {
-            margin-top: 4rem;
-            max-width: 100%;
-            height: auto;
-            border-radius: 1rem;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            transition: transform 0.3s ease;
-        }
-
-        .hero-image:hover {
-            transform: translateY(-5px);
-        }
-
-        /* Features Section */
-        .features {
-            padding: 5rem 0;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
-        }
-
-        .feature-card {
-            background: white;
-            border-radius: 0.5rem;
-            padding: 2rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-
-        .feature-icon {
-            font-size: 2.5rem;
-            color: var(--primary-color);
-            margin-bottom: 1.5rem;
-        }
-
-        .feature-card h3 {
-            font-size: 1.25rem;
-            margin-bottom: 1rem;
-            color: var(--text-primary);
-        }
-
-        .feature-card p {
-            color: var(--text-secondary);
-            line-height: 1.6;
-        }
-
-        /* Responsive Adjustments */
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.25rem;
-            }
-            
-            .hero p {
-                font-size: 1.125rem;
-            }
-            
-            .hero-buttons {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .hero-buttons .button {
-                width: 100%;
-                max-width: 300px;
-            }
-        }
-
-        /* Connection Test */
-        .test-connection {
-            margin: 3rem auto;
-            max-width: 600px;
-            text-align: center;
-            padding: 2rem;
-            background: white;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
-        .test-btn {
-            margin: 1.5rem 0;
-        }
-
-        #connection-status {
-            margin-top: 1rem;
-            padding: 0.75rem 1rem;
-            border-radius: 0.375rem;
-            font-weight: 500;
-        }
-
-        #connection-status.success {
-            background-color: #d1fae5;
-            color: #065f46;
-        }
-
-        #connection-status.error {
-            background-color: #fee2e2;
-            color: #b91c1c;
-        }
-    </style>
+    <!-- Load auth middleware -->
+    <script src="js/auth-middleware.js"></script>
 </head>
 <body>
     <!-- Include Navigation -->
@@ -286,17 +129,21 @@
         </div>
     </footer>
 
-    <!-- Load Navigation -->
     <script>
+        // Get supabase and utilities from auth middleware
+        const { supabase, showAlert } = window.authMiddleware;
+        
         // Load navigation
-        fetch('components/navbar.html')
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById('navbar').innerHTML = html;
-            })
-            .catch(error => {
-                console.error('Error loading navigation:', error);
-            });
+        function loadNavbar() {
+            fetch('components/navbar.html')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('navbar').innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error loading navigation:', error);
+                });
+        }
 
         // Test database connection
         async function testConnection() {
@@ -305,6 +152,7 @@
             status.className = '';
             
             try {
+                // Test with a simple query instead of count
                 const { data, error } = await supabase
                     .from('clients')
                     .select('id')
@@ -320,29 +168,11 @@
                 status.className = 'error';
             }
         }
-    </script>
-    
-    <script>
-        // Initialize Supabase client directly
-        const SUPABASE_URL = 'https://nnqxwcmncytolztvvpvi.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ucXh3Y21uY3l0b2x6dHZ2cHZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4MDg0MjMsImV4cCI6MjA2MjM4NDQyM30.2Ad2Wv3YC9DwxOG82JBF21BGvkS6gbIFOpPXLCWkdso';
         
-        // Wait for Supabase to load
-        document.addEventListener('DOMContentLoaded', function() {
-            if (window.supabase) {
-                window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-                    auth: {
-                        autoRefreshToken: true,
-                        persistSession: true,
-                        detectSessionInUrl: true
-                    }
-                });
-                console.log('Supabase initialized on page load');
-            } else {
-                console.error('Supabase library not loaded');
-            }
+        // Initialize when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadNavbar();
         });
     </script>
-    <script src="js/main.js"></script>
 </body>
 </html>

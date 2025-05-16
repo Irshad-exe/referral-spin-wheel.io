@@ -3,290 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1d4ed8">
     <title>Login - LakshInvestment</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body {
-            background-color: #f3f4f6;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-        }
-        .login-container {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-        }
-        .login-card {
-            background: white;
-            border-radius: 0.75rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            width: 100%;
-            max-width: 28rem;
-            padding: 2.5rem;
-        }
-        .login-logo {
-            width: 180px;
-            margin: 0 auto 2rem;
-            display: block;
-        }
-        .form-group {
-            margin-bottom: 1.5rem;
-            position: relative;
-        }
-        .form-label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: #374151;
-            margin-bottom: 0.5rem;
-        }
-        .form-input {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.375rem;
-            font-size: 1rem;
-            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-        }
-        .form-input:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-        .btn-primary {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            padding: 0.75rem 1.5rem;
-            background-color: #1d4ed8;
-            color: white;
-            font-weight: 500;
-            border-radius: 0.375rem;
-            transition: background-color 0.15s ease-in-out;
-            border: none;
-            cursor: pointer;
-        }
-        .btn-primary:hover {
-            background-color: #1e40af;
-        }
-        .btn-primary:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            background-color: #93c5fd;
-        }
-        .spinner {
-            animation: spin 1s linear infinite;
-            margin-right: 0.5rem;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .alert {
-            padding: 1rem;
-            border-radius: 0.375rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-        }
-        .alert-error {
-            background-color: #fef2f2;
-            border: 1px solid #fecaca;
-            color: #b91c1c;
-        }
-        .alert-success {
-            background-color: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            color: #166534;
-        }
-        .alert-icon {
-            margin-right: 0.75rem;
-            font-size: 1.25rem;
-        }
-        .hidden {
-            display: none !important;
-        }
-        
-
-        .password-toggle {
-            position: absolute;
-            right: 0.75rem;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            color: #9ca3af;
-        }
-        .form-footer {
-            margin-top: 1.5rem;
-            text-align: center;
-            font-size: 0.875rem;
-            color: #6b7280;
-        }
-        .form-footer a {
-            color: #3b82f6;
-            text-decoration: none;
-            font-weight: 500;
-        }
-        .form-footer a:hover {
-            text-decoration: underline;
-        }
-    </style>
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Load Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Load auth middleware -->
+    <script src="js/auth-middleware.js"></script>
 </head>
 <body>
-    <div class="login-container">
-        <div class="login-card">
-            <img src="images/logo.png" alt="LakshInvestment Logo" class="login-logo">
-            
-            <div id="alert" class="alert hidden">
-                <i class="alert-icon fas fa-exclamation-circle"></i>
-                <span id="alertMessage">Error message will appear here</span>
+    <!-- Include Navigation -->
+    <div id="navbar"></div>
+
+    <main class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>Login</h1>
+                <p>Welcome back! Please login to your account</p>
             </div>
-            
-            <form id="loginForm">
-                <h2 class="text-2xl font-bold text-center mb-6">Admin Login</h2>
-                
+
+            <div id="login-form">
                 <div class="form-group">
-                    <label for="email" class="form-label">Email Address</label>
-                    <input 
-                        type="email" 
-                        id="email" 
-                        class="form-input" 
-                        placeholder="Enter admin email" 
-                        required
-                        autocomplete="username"
-                    >
+                    <label for="email">Email</label>
+                    <input type="email" id="email" class="form-control" placeholder="Enter your email" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="password" class="form-label">Password</label>
-                    <div class="relative">
-                        <input 
-                            type="password" 
-                            id="password" 
-                            class="form-input pr-10" 
-                            placeholder="Enter password" 
-                            required
-                            autocomplete="current-password"
-                        >
-                        <span id="togglePassword" class="password-toggle">
-                            <i class="far fa-eye"></i>
-                        </span>
+                    <label for="password">Password</label>
+                    <div class="password-input">
+                        <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
+                        <button type="button" id="toggle-password" class="toggle-password">
+                            <i class="fas fa-eye"></i>
+                        </button>
                     </div>
                 </div>
                 
-                <button type="submit" id="loginButton" class="btn-primary">
-                    <span id="buttonSpinner" class="spinner hidden">
-                        <i class="fas fa-circle-notch"></i>
-                    </span>
-                    <span id="buttonText">Sign In</span>
-                </button>
-            </form>
+                <div class="form-group">
+                    <button id="login-btn" class="button btn-primary btn-block">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                </div>
+                
+                <div id="login-error" class="error-message" style="display: none;"></div>
+            </div>
+            
+            <div id="loading" class="loading" style="display: none;">
+                <div class="loading-spinner"></div>
+                <span>Authenticating...</span>
+            </div>
         </div>
-    </div>
+    </main>
 
-    <!-- Load Auth Scripts -->
-    <script src="/js/auth-loader.js"></script>
-    
-    <script type="module">
-        import { signIn } from '/js/admin-auth.js';
-        import { ROUTES, getRedirectUrl, clearRedirectUrl, navigateTo } from '/js/routes.js';
+    <script>
+        // Get supabase and utilities from auth middleware
+        const { supabase, ROUTES, showAlert, isUserAdmin } = window.authMiddleware;
         
-        // DOM Elements
-        const loginForm = document.getElementById('loginForm');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-        const loginButton = document.getElementById('loginButton');
-        const alertDiv = document.getElementById('alert');
-        const alertMessage = document.getElementById('alertMessage');
-        const togglePassword = document.getElementById('togglePassword');
-        
-        // Show alert message
-        function showAlert(message, type = 'error') {
-            alertMessage.textContent = message;
-            alertDiv.className = `alert ${type === 'error' ? 'alert-error' : 'alert-success'}`;
-            alertDiv.classList.remove('hidden');
+        // Handle login
+        async function handleLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorElement = document.getElementById('login-error');
             
-            // Hide alert after 5 seconds
-            setTimeout(() => {
-                alertDiv.classList.add('hidden');
-            }, 5000);
-        }
-        
-        // Set loading state
-        function setLoading(isLoading) {
-            const buttonText = document.getElementById('buttonText');
-            const spinner = document.getElementById('buttonSpinner');
-            
-            if (isLoading) {
-                loginButton.disabled = true;
-                buttonText.textContent = 'Signing in...';
-                spinner.classList.remove('hidden');
-            } else {
-                loginButton.disabled = false;
-                buttonText.textContent = 'Sign In';
-                spinner.classList.add('hidden');
-            }
-        }
-        
-        // Toggle password visibility
-        togglePassword.addEventListener('click', function() {
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
-            this.querySelector('i').classList.toggle('fa-eye');
-            this.querySelector('i').classList.toggle('fa-eye-slash');
-        });
-        
-        // Handle form submission
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const email = emailInput.value.trim().toLowerCase();
-            const password = passwordInput.value;
-            
-            if (!email) {
-                showAlert('Please enter your email address');
+            // Validate inputs
+            if (!email || !password) {
+                errorElement.textContent = 'Please enter both email and password';
+                errorElement.style.display = 'block';
                 return;
             }
             
-            if (!password) {
-                showAlert('Please enter your password');
-                return;
-            }
-            
-            setLoading(true);
+            // Show loading
+            showLoading(true);
+            errorElement.style.display = 'none';
             
             try {
-                console.log('Attempting sign in...');
-                const { success, error, user } = await signIn(email, password);
-                console.log('Sign in response:', { success, error, user });
+                // Sign in with Supabase
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password
+                });
                 
-                if (success) {
-                    showAlert('Login successful! Redirecting...', 'success');
-                    // Get the redirect URL from session storage or default to dashboard
-                    const redirectUrl = getRedirectUrl();
-                    console.log('Redirecting to:', redirectUrl);
-                    
-                    // Clear the redirect URL from session storage
-                    clearRedirectUrl();
-                    
-                    // Add a small delay to show the success message
-                    setTimeout(() => {
-                        navigateTo(redirectUrl);
-                    }, 1000);
+                if (error) throw error;
+                
+                // Check if user is admin
+                const isAdmin = await isUserAdmin(data.user.id);
+                
+                // Redirect based on user role
+                if (isAdmin) {
+                    window.location.href = ROUTES.ADMIN_DASHBOARD;
                 } else {
-                    throw new Error(error || 'Failed to sign in');
+                    window.location.href = ROUTES.DASHBOARD;
                 }
                 
             } catch (error) {
                 console.error('Login error:', error);
-                showAlert(error.message || 'Invalid email or password');
-                passwordInput.value = '';
+                errorElement.textContent = error.message || 'Login failed. Please check your credentials.';
+                errorElement.style.display = 'block';
             } finally {
-                setLoading(false);
+                showLoading(false);
             }
+        }
+        
+        // Toggle password visibility
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.querySelector('#toggle-password i');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        }
+        
+        // Toggle loading state
+        function showLoading(show) {
+            const loadingElement = document.getElementById('loading');
+            const formElement = document.getElementById('login-form');
+            
+            if (loadingElement) loadingElement.style.display = show ? 'flex' : 'none';
+            if (formElement) formElement.style.display = show ? 'none' : 'block';
+        }
+        
+        // Check if already authenticated
+        async function checkExistingAuth() {
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error || !session) {
+                    return;
+                }
+                
+                // Check if user is admin
+                const isAdmin = await isUserAdmin(session.user.id);
+                
+                // Redirect based on user role
+                if (isAdmin) {
+                    window.location.href = ROUTES.ADMIN_DASHBOARD;
+                } else {
+                    window.location.href = ROUTES.DASHBOARD;
+                }
+            } catch (error) {
+                console.error('Auth check error:', error);
+            }
+        }
+        
+        // Load navigation
+        function loadNavbar() {
+            fetch('components/navbar.html')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('navbar').innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error loading navigation:', error);
+                });
+        }
+        
+        // Initialize when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadNavbar();
+            checkExistingAuth();
+            
+            // Setup event listeners
+            document.getElementById('login-btn').addEventListener('click', handleLogin);
+            document.getElementById('toggle-password').addEventListener('click', togglePasswordVisibility);
+            
+            // Allow login on Enter key
+            document.getElementById('password').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleLogin();
+                }
+            });
         });
     </script>
 </body>
