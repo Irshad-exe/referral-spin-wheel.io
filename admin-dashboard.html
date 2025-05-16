@@ -10,7 +10,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://irshad-exe.github.io/referral-spin-wheel.io/css/styles.css">
+    <!-- Load Supabase JS first -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Load our initialization script -->
+    <script src="js/supabase-init.js"></script>
+    <!-- Then load auth scripts -->
     <script src="https://irshad-exe.github.io/referral-spin-wheel.io/js/auth-loader.js"></script>
     <script type="module" src="https://irshad-exe.github.io/referral-spin-wheel.io/js/admin-auth.js"></script>
 </head>
@@ -72,11 +76,20 @@
     </main>
 
     <script type="module">
-        import { supabase, initializeMiddleware, ROUTES, navigateTo } from 'https://irshad-exe.github.io/referral-spin-wheel.io/js/admin-auth.js';
+        // Import other utilities
+        import { initializeMiddleware, ROUTES, navigateTo } from 'https://irshad-exe.github.io/referral-spin-wheel.io/js/admin-auth.js';
+        
+        // Use our global initialization function
+        let supabase;
         
         // Initialize Supabase and middleware
         async function initialize() {
             try {
+                // Initialize Supabase using our global function
+                console.log('Initializing Supabase client...');
+                supabase = await window.initializeSupabase();
+                console.log('Supabase client initialized:', supabase);
+                
                 // Check authentication first
                 const isAuthenticated = await initializeMiddleware();
                 if (!isAuthenticated) {
@@ -96,6 +109,12 @@
             try {
                 console.log('Starting to load clients...');
                 showLoading(true);
+                
+                // Make sure supabase is initialized
+                if (!supabase) {
+                    console.error('Supabase client not initialized');
+                    throw new Error('Supabase client not initialized');
+                }
                 
                 // First, let's check if we can access the table
                 console.log('Checking table access...');

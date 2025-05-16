@@ -1,61 +1,40 @@
-# LakshInvestment Admin Dashboard
+# LakshInvestment Referral System
 
-A modern admin dashboard for managing clients and referrals.
+A web application for managing client referrals for LakshInvestment.
 
-## Features
+## GitHub Pages Deployment Notes
 
-- Client management
-- Referral tracking
-- Admin authentication
-- Responsive design
+When deploying to GitHub Pages, ensure the following:
 
-## Tech Stack
+1. Update all script paths to use absolute URLs with the GitHub Pages base URL
+2. Ensure Supabase is properly initialized before use with the `supabase-init.js` script
+3. Include the Supabase initialization script before any scripts that use Supabase
+4. Test database connections after deployment
 
-- HTML5
-- CSS3
-- JavaScript (ES6+)
-- Supabase (Backend as a Service)
+## Local Development
 
-## Setup
+1. Clone the repository
+2. Install dependencies with `npm install`
+3. Create a `.env` file based on `.env.example`
+4. Run the development server with `npm start`
 
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/lakshinvestment-admin.git
-cd lakshinvestment-admin
-```
+## Project Structure
 
-2. Open `index.html` in your browser or use a local server:
-```bash
-# Using Python
-python -m http.server 8000
+- `components/` - Reusable HTML components
+- `css/` - Stylesheets
+- `js/` - JavaScript files
+  - `admin.js` - Admin dashboard functionality
+  - `admin-auth.js` - Admin authentication
+  - `config.js` - Configuration settings
+  - `main.js` - Main application logic
+  - `supabase-init.js` - Supabase initialization script
+- `*.html` - HTML pages
 
-# Using Node.js
-npx serve
-```
+## Troubleshooting
 
-3. Visit `http://localhost:8000` in your browser
+If client fetching stops working after deployment:
 
-## Environment Variables
-
-Create a `.env` file in the root directory with your Supabase credentials:
-
-```env
-SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_supabase_anon_key
-```
-
-## Deployment
-
-The frontend is hosted on GitHub Pages. The backend is powered by Supabase.
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
+1. Check browser console for errors
+2. Verify Supabase initialization is happening before data fetching
+3. Ensure all paths are updated to use the correct GitHub Pages URL
+4. Check CORS settings in Supabase dashboard

@@ -322,7 +322,27 @@
         }
     </script>
     
-    <script src="js/config.js"></script>
+    <script>
+        // Initialize Supabase client directly
+        const SUPABASE_URL = 'https://nnqxwcmncytolztvvpvi.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ucXh3Y21uY3l0b2x6dHZ2cHZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4MDg0MjMsImV4cCI6MjA2MjM4NDQyM30.2Ad2Wv3YC9DwxOG82JBF21BGvkS6gbIFOpPXLCWkdso';
+        
+        // Wait for Supabase to load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.supabase) {
+                window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                    auth: {
+                        autoRefreshToken: true,
+                        persistSession: true,
+                        detectSessionInUrl: true
+                    }
+                });
+                console.log('Supabase initialized on page load');
+            } else {
+                console.error('Supabase library not loaded');
+            }
+        });
+    </script>
     <script src="js/main.js"></script>
 </body>
 </html>
