@@ -4,329 +4,304 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#1d4ed8">
-    <title>Client Dashboard - LakshInvestment</title>
+    <title>Dashboard - LakshInvestment</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="https://irshad-exe.github.io/referral-spin-wheel.io/css/styles.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Load Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://irshad-exe.github.io/referral-spin-wheel.io/js/auth-loader.js"></script>
-    <script type="module" src="https://irshad-exe.github.io/referral-spin-wheel.io/js/admin-auth.js"></script>
-    <style>
-        .main-content {
-            padding: 2rem 0;
-        }
-        
-        .stats-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin: 2rem 0;
-        }
-        
-        .stat-box {
-            background: var(--bg-primary);
-            border-radius: var(--border-radius);
-            padding: 1.5rem;
-            box-shadow: var(--shadow);
-            text-align: center;
-        }
-        
-        .stat-box h3 {
-            color: var(--text-secondary);
-            font-size: 1rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .stat-box p {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--primary-color);
-            margin: 0;
-        }
-        
-        .table-container {
-            background: var(--bg-primary);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            overflow: hidden;
-            margin-top: 2rem;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        th, td {
-            padding: 1rem 1.5rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-        }
-        
-        th {
-            background-color: var(--bg-secondary);
-            font-weight: 600;
-            color: var(--text-primary);
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.05em;
-        }
-        
-        .status {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: capitalize;
-        }
-        
-        .status-pending {
-            background-color: #fef3c7;
-            color: #92400e;
-        }
-        
-        .status-eligible {
-            background-color: #d1fae5;
-            color: #065f46;
-        }
-        
-        .spin-button {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            font-weight: 500;
-            transition: var(--transition);
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .spin-button:hover {
-            background-color: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-        
-        .spin-button:disabled {
-            background-color: var(--bg-secondary);
-            color: var(--text-muted);
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .view-referrals {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: 500;
-            transition: var(--transition);
-        }
-        
-        .view-referrals:hover {
-            text-decoration: underline;
-        }
-        
-        @media (max-width: 768px) {
-            .stats-container {
-                grid-template-columns: 1fr;
-            }
-            
-            .table-container {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-            
-            table {
-                min-width: 600px;
-            }
-        }
-    </style>
 </head>
 <body>
     <!-- Include Navigation -->
     <div id="navbar"></div>
 
-    <main class="main-content">
+    <main class="dashboard">
         <div class="container">
-            <h1>Client Ladoo Dashboard</h1>
-            
-            <div class="stats-container">
-                <div class="stat-box">
-                    <h3>Total Clients</h3>
-                    <p id="total-clients">0</p>
+            <div class="dashboard-header">
+                <h1>User Dashboard</h1>
+            </div>
+
+            <div id="auth-content" style="display: none;">
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-gift"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Your Ladoos</h3>
+                            <p id="ladoo-count">Loading...</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Referrals</h3>
+                            <p id="referral-count">Loading...</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="stat-box">
-                    <h3>Clients with 3+ Ladoos</h3>
-                    <p id="eligible-clients">0</p>
+
+                <div class="dashboard-actions">
+                    <button id="spin-wheel-btn" class="button btn-primary">
+                        <i class="fas fa-dharmachakra"></i> Spin the Wheel
+                    </button>
+                    <button id="refer-friend-btn" class="button btn-outline-primary">
+                        <i class="fas fa-share"></i> Refer a Friend
+                    </button>
+                </div>
+
+                <div class="dashboard-section">
+                    <h2>Recent Activity</h2>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Activity</th>
+                                    <th>Ladoos</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activity-table-body">
+                                <!-- Activity data will be inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
-            <div class="table-container">
-                <table id="clients-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Contact</th>
-                            <th>Ladoo Count</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                            <th>Spin Wheel</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Client rows will be inserted here -->
-                    </tbody>
-                </table>
+            <div id="auth-error" style="display: none;" class="auth-message">
+                <i class="fas fa-lock" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                <h2>Authentication Required</h2>
+                <p>You need to be logged in to view your dashboard.</p>
+                <button id="login-redirect" class="button btn-primary">Go to Login</button>
+            </div>
+
+            <div id="loading" class="loading">
+                <div class="loading-spinner"></div>
+                <span>Loading dashboard...</span>
             </div>
         </div>
     </main>
 
-    <script type="module">
-        import { supabase, initializeMiddleware, ROUTES, navigateTo } from 'https://irshad-exe.github.io/referral-spin-wheel.io/js/admin-auth.js';
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://nnqxwcmncytolztvvpvi.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ucXh3Y21uY3l0b2x6dHZ2cHZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4MDg0MjMsImV4cCI6MjA2MjM4NDQyM30.2Ad2Wv3YC9DwxOG82JBF21BGvkS6gbIFOpPXLCWkdso';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-        // Initialize Supabase and middleware
-        async function initialize() {
+        // Routes
+        const BASE_URL = 'https://irshad-exe.github.io/referral-spin-wheel.io';
+        const ROUTES = {
+            LOGIN: `${BASE_URL}/login.html`,
+            SPIN: `${BASE_URL}/spin.html`
+        };
+        
+        // Navigation function
+        function navigateTo(route) {
+            window.location.href = route;
+        }
+        
+        // Check authentication status
+        async function checkAuth() {
             try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                return { 
+                    isAuthenticated: !!session, 
+                    session,
+                    error
+                };
+            } catch (error) {
+                console.error('Auth check error:', error);
+                return { isAuthenticated: false, error };
+            }
+        }
+        
+        // Initialize dashboard
+        async function initializeDashboard() {
+            try {
+                showLoading(true);
+                
                 // Check authentication first
-                const isAuthenticated = await initializeMiddleware();
-                if (!isAuthenticated) {
+                const { isAuthenticated, session, error: authError } = await checkAuth();
+                
+                if (authError) {
+                    console.error('Authentication error:', authError);
+                    showAuthError(true);
                     return;
                 }
                 
-                // Load clients if authenticated
-                await loadClients();
-            } catch (error) {
-                console.error('Initialization error:', error);
-                navigateTo(ROUTES.LOGIN);
-            }
-        }
-        
-        // Load clients from Supabase
-        async function loadClients() {
-            try {
-                const { data: clients, error } = await supabase
-                    .from('clients')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-                
-                if (error) throw error;
-                
-                updateClientStats(clients);
-                renderClientTable(clients);
-            } catch (error) {
-                console.error('Error loading clients:', error);
-                showAlert('Error loading clients. Please try again.', 'error');
-            }
-        }
-        
-        // Update client statistics
-        function updateClientStats(clients) {
-            const totalClients = clients.length;
-            const activeClients = clients.filter(client => client.status === 'active').length;
-            const pendingClients = clients.filter(client => client.status === 'pending').length;
-            
-            document.getElementById('total-clients').textContent = totalClients;
-            document.getElementById('active-clients').textContent = activeClients;
-            document.getElementById('pending-clients').textContent = pendingClients;
-        }
-        
-        // Render client table
-        function renderClientTable(clients) {
-            const tbody = document.getElementById('clients-tbody');
-            tbody.innerHTML = '';
-            
-            clients.forEach(client => {
-                const row = document.createElement('tr');
-                
-                // Format created_at date
-                const createdAt = client.created_at ? new Date(client.created_at).toLocaleDateString() : 'N/A';
-                
-                // Determine status badge
-                let statusClass = 'status-inactive';
-                let statusText = 'Inactive';
-                
-                if (client.status === 'active') {
-                    statusClass = 'status-active';
-                    statusText = 'Active';
-                } else if (client.status === 'pending') {
-                    statusClass = 'status-pending';
-                    statusText = 'Pending';
+                if (!isAuthenticated) {
+                    console.log('User not authenticated');
+                    showAuthError(true);
+                    return;
                 }
                 
-                row.innerHTML = `
-                    <td data-label="Name">${escapeHtml(client.name || 'N/A')}</td>
-                    <td data-label="Email">${escapeHtml(client.email || 'N/A')}</td>
-                    <td data-label="UCC">${escapeHtml(client.ucc || 'N/A')}</td>
-                    <td data-label="Contact">${escapeHtml(client.contact_info || 'N/A')}</td>
-                    <td data-label="Status"><span class="status-badge ${statusClass}">${statusText}</span></td>
-                    <td data-label="Actions">
-                        <button class="button btn-outline-primary btn-sm" onclick="viewReferrals(${client.id})">
-                            <i class="fas fa-eye"></i> View
-                        </button>
-                        <button class="button btn-outline-success btn-sm" onclick="spinWheel(${client.id})">
-                            <i class="fas fa-gift"></i> Spin
-                        </button>
-                    </td>
-                `;
+                console.log('User authenticated:', session.user.email);
                 
-                tbody.appendChild(row);
+                // Load user data
+                await loadUserData(session.user.id);
+                
+                // Show authenticated content
+                document.getElementById('auth-content').style.display = 'block';
+                document.getElementById('auth-error').style.display = 'none';
+                
+                // Setup button actions
+                setupButtonActions();
+                
+            } catch (error) {
+                console.error('Dashboard initialization error:', error);
+                showAlert('Error loading dashboard: ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Load user data
+        async function loadUserData(userId) {
+            try {
+                // Get user profile
+                const { data: profile, error: profileError } = await supabase
+                    .from('user_profiles')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .single();
+                
+                if (profileError && profileError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+                    console.error('Error fetching user profile:', profileError);
+                    throw profileError;
+                }
+                
+                // Update ladoo count
+                const ladooCount = profile?.ladoo_count || 0;
+                document.getElementById('ladoo-count').textContent = ladooCount;
+                
+                // Get referral count
+                const { count: referralCount, error: referralError } = await supabase
+                    .from('referrals')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('referrer_id', userId);
+                
+                if (referralError) {
+                    console.error('Error fetching referral count:', referralError);
+                    // Continue anyway, just show 0
+                }
+                
+                document.getElementById('referral-count').textContent = referralCount || 0;
+                
+                // Load activity
+                await loadActivity(userId);
+                
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                showAlert('Error loading user data', 'error');
+            }
+        }
+        
+        // Load activity
+        async function loadActivity(userId) {
+            try {
+                const { data: activities, error } = await supabase
+                    .from('user_activities')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+                
+                if (error) {
+                    console.error('Error fetching activities:', error);
+                    throw error;
+                }
+                
+                const tableBody = document.getElementById('activity-table-body');
+                tableBody.innerHTML = '';
+                
+                if (activities && activities.length > 0) {
+                    activities.forEach(activity => {
+                        const row = document.createElement('tr');
+                        const date = new Date(activity.created_at).toLocaleDateString();
+                        
+                        row.innerHTML = `
+                            <td>${date}</td>
+                            <td>${escapeHtml(activity.description)}</td>
+                            <td>${activity.ladoo_change > 0 ? '+' : ''}${activity.ladoo_change}</td>
+                        `;
+                        
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td colspan="3" style="text-align: center;">No recent activity</td>
+                    `;
+                    tableBody.appendChild(row);
+                }
+                
+            } catch (error) {
+                console.error('Error loading activity:', error);
+                const tableBody = document.getElementById('activity-table-body');
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="3" style="text-align: center;">Error loading activity</td>
+                    </tr>
+                `;
+            }
+        }
+        
+        // Setup button actions
+        function setupButtonActions() {
+            // Spin wheel button
+            document.getElementById('spin-wheel-btn').addEventListener('click', () => {
+                navigateTo(ROUTES.SPIN);
+            });
+            
+            // Refer friend button
+            document.getElementById('refer-friend-btn').addEventListener('click', () => {
+                showReferralModal();
             });
         }
         
-        // View client referrals
-        async function viewReferrals(clientId) {
-            try {
-                const { data: referrals, error } = await supabase
-                    .from('referrals')
-                    .select('*')
-                    .eq('client_id', clientId)
-                    .order('created_at', { ascending: false });
-                
-                if (error) throw error;
-                
-                // TODO: Implement referral view modal
-                console.log('Referrals:', referrals);
-            } catch (error) {
-                console.error('Error loading referrals:', error);
-                showAlert('Error loading referrals. Please try again.', 'error');
-            }
-        }
-        
-        // Spin wheel for client
-        async function spinWheel(clientId) {
-            try {
-                const { data: spinLink, error } = await supabase
-                    .from('spin_links')
-                    .insert({
-                        client_id: clientId,
-                        token: crypto.randomUUID()
-                    })
-                    .select()
-                    .single();
-                
-                if (error) throw error;
-                
-                const spinUrl = `${ROUTES.SPIN}?token=${spinLink.token}`;
-                window.open(spinUrl, '_blank');
-            } catch (error) {
-                console.error('Error creating spin link:', error);
-                showAlert('Error creating spin link. Please try again.', 'error');
-            }
+        // Show referral modal
+        function showReferralModal() {
+            // Implement referral modal
+            showAlert('Referral feature coming soon!', 'info');
         }
         
         // Helper function to escape HTML
         function escapeHtml(unsafe) {
             if (typeof unsafe !== 'string') return unsafe;
             return unsafe
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
+                .replace(/&/g, '&')
+                .replace(/</g, '<')
+                .replace(/>/g, '>')
+                .replace(/\"/g, '"')
                 .replace(/'/g, '&#039;');
+        }
+        
+        // Toggle loading state
+        function showLoading(show) {
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement) loadingElement.style.display = show ? 'flex' : 'none';
+        }
+        
+        // Show authentication error
+        function showAuthError(show) {
+            const authErrorElement = document.getElementById('auth-error');
+            const authContentElement = document.getElementById('auth-content');
+            
+            if (authErrorElement) authErrorElement.style.display = show ? 'block' : 'none';
+            if (authContentElement) authContentElement.style.display = show ? 'none' : 'block';
+            
+            // Add event listener to login redirect button
+            const loginRedirectBtn = document.getElementById('login-redirect');
+            if (loginRedirectBtn) {
+                loginRedirectBtn.addEventListener('click', () => {
+                    navigateTo(ROUTES.LOGIN);
+                });
+            }
         }
         
         // Show alert message
@@ -341,10 +316,24 @@
             }, 5000);
         }
         
+        // Load navigation
+        function loadNavbar() {
+            fetch('components/navbar.html')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('navbar').innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error loading navigation:', error);
+                });
+        }
+        
         // Initialize when the page loads
         document.addEventListener('DOMContentLoaded', () => {
-            initialize();
+            console.log('DOM Content Loaded, starting initialization...');
+            loadNavbar();
+            initializeDashboard();
         });
     </script>
 </body>
-</html> 
+</html>
