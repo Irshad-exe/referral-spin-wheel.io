@@ -38,12 +38,33 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            margin-right: 10px;
+        }
+        .login-form {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        input {
+            padding: 8px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
     <h1>Supabase Connection Test</h1>
     <p>This page tests the connection to your Supabase database and attempts to fetch clients.</p>
+    
+    <div class="login-form">
+        <h3>Login</h3>
+        <input type="email" id="email" placeholder="Email" />
+        <input type="password" id="password" placeholder="Password" />
+        <button id="loginBtn">Login</button>
+        <button id="checkAuthBtn">Check Auth Status</button>
+    </div>
     
     <button id="testBtn">Test Connection</button>
     <div id="result" class="result"></div>
@@ -53,19 +74,107 @@
         const SUPABASE_URL = 'https://nnqxwcmncytolztvvpvi.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ucXh3Y21uY3l0b2x6dHZ2cHZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4MDg0MjMsImV4cCI6MjA2MjM4NDQyM30.2Ad2Wv3YC9DwxOG82JBF21BGvkS6gbIFOpPXLCWkdso';
         
+        // Initialize Supabase
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Login function
+        document.getElementById('loginBtn').addEventListener('click', async () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('result');
+            
+            if (!email || !password) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = 'Please enter both email and password';
+                return;
+            }
+            
+            resultDiv.innerHTML = 'Logging in...';
+            resultDiv.className = 'result';
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password
+                });
+                
+                if (error) throw error;
+                
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    <h3>✅ Login Successful</h3>
+                    <p>Logged in as: ${data.user.email}</p>
+                    <p>You can now test the connection.</p>
+                `;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <h3>❌ Login Failed</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        });
+        
+        // Check auth status
+        document.getElementById('checkAuthBtn').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Checking authentication...';
+            resultDiv.className = 'result';
+            
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error) throw error;
+                
+                if (session) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h3>✅ Authenticated</h3>
+                        <p>You are logged in as: ${session.user.email}</p>
+                        <p>User ID: ${session.user.id}</p>
+                        <p>Session expires: ${new Date(session.expires_at * 1000).toLocaleString()}</p>
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h3>❌ Not Authenticated</h3>
+                        <p>You are not logged in. Please login first.</p>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <h3>❌ Error Checking Auth</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        });
+        
+        // Test connection
         document.getElementById('testBtn').addEventListener('click', async () => {
             const resultDiv = document.getElementById('result');
             resultDiv.innerHTML = 'Testing connection...';
             resultDiv.className = 'result';
             
             try {
-                // Initialize Supabase
-                console.log('Initializing Supabase client...');
-                const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                // Check authentication status first
+                const { data: { session }, error: authError } = await supabase.auth.getSession();
                 
-                // Test connection with a simple query
+                if (authError) {
+                    throw authError;
+                }
+                
+                // Show auth status
+                const authStatus = session ? 
+                    `Authenticated as: ${session.user.email}` : 
+                    'Not authenticated - some operations may be restricted';
+                
+                // Test connection with a simple query (avoid aggregate functions)
                 console.log('Testing connection...');
-                const { data: connectionTest, error: connectionError } = await supabase.from('clients').select('count()', { count: 'exact' });
+                const { data: connectionTest, error: connectionError } = await supabase
+                    .from('clients')
+                    .select('id')
+                    .limit(1);
                 
                 if (connectionError) {
                     throw connectionError;
@@ -73,7 +182,10 @@
                 
                 console.log('Connection successful, fetching clients...');
                 // Try to fetch actual client data
-                const { data: clients, error } = await supabase.from('clients').select('*').limit(5);
+                const { data: clients, error } = await supabase
+                    .from('clients')
+                    .select('*')
+                    .limit(5);
                 
                 if (error) {
                     throw error;
@@ -83,6 +195,7 @@
                 resultDiv.className = 'result success';
                 resultDiv.innerHTML = `
                     <h3>✅ Connection Successful!</h3>
+                    <p>${authStatus}</p>
                     <p>Successfully connected to Supabase and fetched client data.</p>
                     <h4>First ${clients.length} clients:</h4>
                     <pre>${JSON.stringify(clients, null, 2)}</pre>
@@ -100,10 +213,10 @@
                     
                     <h4>Possible solutions:</h4>
                     <ul>
+                        <li>Log in first before testing the connection</li>
                         <li>Check if your Supabase project is active</li>
                         <li>Verify that the 'clients' table exists in your database</li>
-                        <li>Ensure your Row Level Security (RLS) policies allow anonymous access</li>
-                        <li>Check if your API key has expired</li>
+                        <li>Ensure your Row Level Security (RLS) policies allow access</li>
                     </ul>
                 `;
             }
