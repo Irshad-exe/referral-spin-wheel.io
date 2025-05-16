@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Connection Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .error {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+        pre {
+            background: #f1f1f1;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        button {
+            padding: 10px 15px;
+            background: #1d4ed8;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Supabase Connection Test</h1>
+    <p>This page tests the connection to your Supabase database and attempts to fetch clients.</p>
+    
+    <button id="testBtn">Test Connection</button>
+    <div id="result" class="result"></div>
+    
+    <script>
+        // Supabase credentials
+        const SUPABASE_URL = 'https://nnqxwcmncytolztvvpvi.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ucXh3Y21uY3l0b2x6dHZ2cHZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4MDg0MjMsImV4cCI6MjA2MjM4NDQyM30.2Ad2Wv3YC9DwxOG82JBF21BGvkS6gbIFOpPXLCWkdso';
+        
+        document.getElementById('testBtn').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing connection...';
+            resultDiv.className = 'result';
+            
+            try {
+                // Initialize Supabase
+                console.log('Initializing Supabase client...');
+                const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                
+                // Test connection with a simple query
+                console.log('Testing connection...');
+                const { data: connectionTest, error: connectionError } = await supabase.from('clients').select('count()', { count: 'exact' });
+                
+                if (connectionError) {
+                    throw connectionError;
+                }
+                
+                console.log('Connection successful, fetching clients...');
+                // Try to fetch actual client data
+                const { data: clients, error } = await supabase.from('clients').select('*').limit(5);
+                
+                if (error) {
+                    throw error;
+                }
+                
+                // Display success
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    <h3>✅ Connection Successful!</h3>
+                    <p>Successfully connected to Supabase and fetched client data.</p>
+                    <h4>First ${clients.length} clients:</h4>
+                    <pre>${JSON.stringify(clients, null, 2)}</pre>
+                `;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <h3>❌ Connection Failed</h3>
+                    <p>Error: ${error.message || 'Unknown error'}</p>
+                    <p>Error code: ${error.code || 'N/A'}</p>
+                    <p>Details:</p>
+                    <pre>${JSON.stringify(error, null, 2)}</pre>
+                    
+                    <h4>Possible solutions:</h4>
+                    <ul>
+                        <li>Check if your Supabase project is active</li>
+                        <li>Verify that the 'clients' table exists in your database</li>
+                        <li>Ensure your Row Level Security (RLS) policies allow anonymous access</li>
+                        <li>Check if your API key has expired</li>
+                    </ul>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
